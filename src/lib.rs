@@ -33,6 +33,7 @@ use pin_slab::PinSlab;
 use shared_waker::SharedWaker;
 use waker_page::{WakerPage, WakerPageRef, WAKER_PAGE_SIZE};
 
+use std::any::Any;
 use std::{
     cell::RefCell,
     future::Future,
@@ -86,11 +87,16 @@ impl Drop for SchedulerHandle {
 
 /// The scheduler
 /// runs on a single thread multiplexing between all available work.
-pub struct Scheduler<F: Future<Output = ()> + Unpin> {
-    inner: Rc<RefCell<Inner<F>>>,
+pub struct Scheduler {
+    inner: Rc<RefCell<Inner<Box<dyn SchedulerFuture>>>>,
 }
 
-impl<F: Future<Output = ()> + Unpin> Clone for Scheduler<F> {
+pub trait SchedulerFuture: Any + Future<Output = ()> + Unpin {
+    fn as_any(self: Box<Self>) -> Box<dyn Any>;
+    fn get_future(&self) -> &dyn Future<Output = ()>;
+}
+
+impl Clone for Scheduler {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
@@ -98,13 +104,13 @@ impl<F: Future<Output = ()> + Unpin> Clone for Scheduler<F> {
     }
 }
 
-impl<F: Future<Output = ()> + Unpin> Default for Scheduler<F> {
+impl Default for Scheduler {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<F: Future<Output = ()> + Unpin> Scheduler<F> {
+impl Scheduler {
     /// New empty scheduler with default settings.
     pub fn new() -> Self {
         let inner = Inner {
@@ -118,7 +124,7 @@ impl<F: Future<Output = ()> + Unpin> Scheduler<F> {
     }
 
     /// Given a handle representing a future, remove the future from the scheduler returning it.
-    pub fn take(&self, mut handle: SchedulerHandle) -> F {
+    pub fn take(&self, mut handle: SchedulerHandle) -> Box<dyn SchedulerFuture> {
         let mut inner = self.inner.borrow_mut();
         let key = handle.key.take().unwrap();
         let (page, subpage_ix) = inner.page(key);
@@ -140,9 +146,9 @@ impl<F: Future<Output = ()> + Unpin> Scheduler<F> {
     }
 
     /// Insert a new task into our scheduler returning a handle corresponding to it.
-    pub fn insert(&self, future: F) -> SchedulerHandle {
+    pub fn insert<F: SchedulerFuture>(&self, future: F) -> SchedulerHandle {
         let mut inner = self.inner.borrow_mut();
-        let key = inner.insert(future);
+        let key = inner.insert(Box::new(future));
         let (page, _) = inner.page(key);
         SchedulerHandle {
             key: Some(key),
