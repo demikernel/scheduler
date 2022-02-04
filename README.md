@@ -17,8 +17,8 @@ Building and Running
 
 **1. Clone This Repository**
 ```
-export WORKDIR=$HOME                                     # Change this to whatever you want.
-cd $WORKDIR                                              # Switch to working directory.
+export WORKDIR=$HOME                                   # Change this to whatever you want.
+cd $WORKDIR                                            # Switch to working directory.
 git clone https://github.com/demikernel/catwalk.git    # Clone.
 ```
 
