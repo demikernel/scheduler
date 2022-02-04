@@ -25,11 +25,12 @@
 #![feature(allocator_api)]
 
 mod pin_slab;
-mod sync;
+mod shared_waker;
+mod waker64;
 mod waker_page;
 
 use pin_slab::PinSlab;
-use sync::SharedWaker;
+use shared_waker::SharedWaker;
 use waker_page::{WakerPage, WakerPageRef, WAKER_PAGE_SIZE};
 
 use std::{
