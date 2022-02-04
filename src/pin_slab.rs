@@ -27,19 +27,6 @@
 //! contains a growable collection of fixed-size regions called slots.
 //! This allows is to store immovable objects inside the slab, since growing the
 //! collection doesn't require the existing slots to move.
-//!
-//! # Examples
-//!
-//! ```rust
-//! use unicycle::pin_slab::PinSlab;
-//!
-//! let mut slab = PinSlab::new();
-//!
-//! assert!(!slab.remove(0));
-//! let index = slab.insert(42);
-//! assert!(slab.remove(index));
-//! assert!(!slab.remove(index));
-//! ```
 
 use std::{mem, pin::Pin, ptr};
 
@@ -77,19 +64,6 @@ enum Entry<T> {
 
 impl<T> PinSlab<T> {
     /// Construct a new, empty [PinSlab] with the default slot size.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use unicycle::pin_slab::PinSlab;
-    ///
-    /// let mut slab = PinSlab::new();
-    ///
-    /// assert!(!slab.remove(0));
-    /// let index = slab.insert(42);
-    /// assert!(slab.remove(index));
-    /// assert!(!slab.remove(index));
-    /// ```
     pub fn new() -> Self {
         Self {
             slots: Vec::new(),
@@ -99,34 +73,12 @@ impl<T> PinSlab<T> {
     }
 
     /// Get the length of the slab.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use unicycle::pin_slab::PinSlab;
-    ///
-    /// let mut slab = PinSlab::new();
-    /// assert_eq!(0, slab.len());
-    /// assert_eq!(0, slab.insert(42));
-    /// assert_eq!(1, slab.len());
-    /// ```
     #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.len
     }
 
     /// Test if the pin slab is empty.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use unicycle::pin_slab::PinSlab;
-    ///
-    /// let mut slab = PinSlab::new();
-    /// assert!(slab.is_empty());
-    /// assert_eq!(0, slab.insert(42));
-    /// assert!(!slab.is_empty());
-    /// ```
     #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
         self.len == 0
@@ -151,16 +103,6 @@ impl<T> PinSlab<T> {
     }
 
     /// Get a reference to the value at the given slot.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use unicycle::pin_slab::PinSlab;
-    ///
-    /// let mut slab = PinSlab::new();
-    /// let key = slab.insert(42);
-    /// assert_eq!(Some(&42), slab.get(key));
-    /// ```
     pub fn get(&self, key: usize) -> Option<&T> {
         // Safety: We only use this to acquire an immutable reference.
         // The internal calculation guarantees that the key is in bounds.
@@ -168,17 +110,6 @@ impl<T> PinSlab<T> {
     }
 
     /// Get a mutable reference to the value at the given slot.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use unicycle::pin_slab::PinSlab;
-    ///
-    /// let mut slab = PinSlab::new();
-    /// let key = slab.insert(42);
-    /// *slab.get_mut(key).unwrap() = 43;
-    /// assert_eq!(Some(&43), slab.get(key));
-    /// ```
     #[allow(dead_code)]
     pub fn get_mut(&mut self, key: usize) -> Option<&mut T>
     where
@@ -235,19 +166,6 @@ impl<T> PinSlab<T> {
     ///
     /// We need to take care that we don't move it, hence we only perform
     /// operations over pointers below.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use unicycle::pin_slab::PinSlab;
-    ///
-    /// let mut slab = PinSlab::new();
-    ///
-    /// assert!(!slab.remove(0));
-    /// let index = slab.insert(42);
-    /// assert!(slab.remove(index));
-    /// assert!(!slab.remove(index));
-    /// ```
     pub fn remove(&mut self, key: usize) -> bool {
         let (slot, offset, len) = calculate_key(key);
 
@@ -306,17 +224,6 @@ impl<T> PinSlab<T> {
     }
 
     /// Clear all available data in the PinSlot.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use unicycle::pin_slab::PinSlab;
-    ///
-    /// let mut slab = PinSlab::new();
-    /// assert_eq!(0, slab.insert(42));
-    /// slab.clear();
-    /// assert!(slab.get(0).is_none());
-    /// ```
     pub fn clear(&mut self) {
         for (len, entry) in slot_sizes().zip(self.slots.iter_mut()) {
             // reconstruct the vector for the slot.
