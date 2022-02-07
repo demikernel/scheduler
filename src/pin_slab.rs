@@ -28,7 +28,7 @@
 //! This allows is to store immovable objects inside the slab, since growing the
 //! collection doesn't require the existing slots to move.
 
-use std::{mem, pin::Pin, ptr};
+use ::std::{mem, pin::Pin, ptr};
 
 // Size of the first slot.
 const FIRST_SLOT_SIZE: usize = 16;

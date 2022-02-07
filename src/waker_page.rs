@@ -5,8 +5,13 @@
 //! in our scheduler. This page is represented by a 64-bit integer where the ith bit corresponds to
 //! the ith task in that page. This way fast bit arithmetic can be used to index into a task's
 //! state and uniquely identify a task among multiple pages.
+
+//==============================================================================
+// Imports
+//==============================================================================
+
 use crate::{shared_waker::SharedWaker, waker64::WakerU64};
-use std::{
+use ::std::{
     alloc::{Allocator, Global, Layout},
     mem,
     ops::Deref,
@@ -14,9 +19,17 @@ use std::{
     task::{RawWaker, RawWakerVTable},
 };
 
+//==============================================================================
+// Constants
+//==============================================================================
+
 /// Size of our pages. Should be the same size as the number of bits in the underlying data type
 /// representing our bit vectors.
 pub const WAKER_PAGE_SIZE: usize = 64;
+
+//==============================================================================
+// Structures
+//==============================================================================
 
 /// A page is used by the scheduler to hold the current status of 64 different futures in the
 /// scheduler. So we use 64bit integers where the ith bit represents the ith future. Pages are
@@ -36,6 +49,10 @@ pub struct WakerPage {
     waker: SharedWaker,
     _unused: [u8; 24],
 }
+
+//==============================================================================
+// Associate Functions
+//==============================================================================
 
 impl WakerPage {
     #[allow(clippy::new_ret_no_self)]
@@ -137,6 +154,10 @@ impl WakerPageRef {
         }
     }
 }
+
+//==============================================================================
+// Trait Implementations
+//==============================================================================
 
 impl Clone for WakerPageRef {
     fn clone(&self) -> Self {
@@ -272,7 +293,7 @@ mod tests {
 
     #[test]
     fn test_basic() {
-        let waker = SharedWaker::new();
+        let waker = SharedWaker::default();
         let p = WakerPage::new(waker);
 
         let q = p.waker(0);
