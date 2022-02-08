@@ -5,7 +5,7 @@
 // Imports
 //==============================================================================
 
-use crate::waker_page::{WakerPageRef, WAKER_PAGE_SIZE};
+use crate::page::{WakerPageRef, WAKER_PAGE_SIZE};
 
 //==============================================================================
 // Structures

@@ -1,19 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#![cfg_attr(feature = "strict", deny(warnings))]
-#![deny(clippy::all)]
-#![recursion_limit = "512"]
-#![feature(test)]
-#![feature(allocator_api)]
-
 mod page;
-mod pin_slab;
-mod scheduler;
-mod waker64;
+mod page_ref;
+mod waker_ref;
 
 //==============================================================================
 // Exports
 //==============================================================================
 
-pub use scheduler::{Scheduler, SchedulerFuture, SchedulerHandle};
+pub use page::{WakerPage, WAKER_BIT_LENGTH, WAKER_PAGE_SIZE};
+pub use page_ref::WakerPageRef;
+pub use waker_ref::WakerRef;
