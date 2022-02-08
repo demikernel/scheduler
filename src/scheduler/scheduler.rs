@@ -17,7 +17,7 @@
 //==============================================================================
 
 use crate::{
-    page::{WakerPageRef, WAKER_PAGE_SIZE},
+    page::{WakerPageRef, WakerRef, WAKER_BIT_LENGTH},
     pin_slab::PinSlab,
 };
 use ::bit_iter::BitIter;
@@ -25,6 +25,7 @@ use ::std::{
     cell::RefCell,
     future::Future,
     pin::Pin,
+    ptr::NonNull,
     rc::Rc,
     task::{Context, Poll, Waker},
 };
@@ -33,7 +34,7 @@ use ::std::{
 // Exports
 //==============================================================================
 
-pub use super::{future::SchedulerFuture, handle::SchedulerHandle};
+use super::{future::SchedulerFuture, handle::SchedulerHandle};
 
 //==============================================================================
 // Structures
@@ -64,22 +65,22 @@ impl<F: Future<Output = ()> + Unpin> Inner<F> {
     /// correct page as well as the index within page.
     /// Given the `key` representing a future, return a reference to that page, `WakerPageRef`. And
     /// the index _within_ that page (usize).
-    fn page(&self, key: u64) -> (&WakerPageRef, usize) {
+    fn get_page(&self, key: u64) -> (&WakerPageRef, usize) {
         let key = key as usize;
-        let (page_ix, subpage_ix) = (key / WAKER_PAGE_SIZE, key % WAKER_PAGE_SIZE);
+        let (page_ix, subpage_ix) = (key / WAKER_BIT_LENGTH, key % WAKER_BIT_LENGTH);
         (&self.pages[page_ix], subpage_ix)
     }
 
     /// Insert a future into our scheduler returning an integer key representing this future. This
     /// key is used to index into the slab for accessing the future.
     fn insert(&mut self, future: F) -> u64 {
-        let key = self.slab.insert(future);
+        let key: usize = self.slab.insert(future);
 
         // Add a new page to hold this future's status if the current page is filled.
-        while key >= self.pages.len() * WAKER_PAGE_SIZE {
-            self.pages.push(WakerPageRef::new());
+        while key >= self.pages.len() * WAKER_BIT_LENGTH {
+            self.pages.push(WakerPageRef::default());
         }
-        let (page, subpage_ix) = self.page(key as u64);
+        let (page, subpage_ix) = self.get_page(key as u64);
         page.initialize(subpage_ix);
         key as u64
     }
@@ -90,8 +91,8 @@ impl Scheduler {
     /// Given a handle representing a future, remove the future from the scheduler returning it.
     pub fn take(&self, mut handle: SchedulerHandle) -> Box<dyn SchedulerFuture> {
         let mut inner = self.inner.borrow_mut();
-        let key = handle.take_key().unwrap();
-        let (page, subpage_ix) = inner.page(key);
+        let key: u64 = handle.take_key().unwrap();
+        let (page, subpage_ix) = inner.get_page(key);
         assert!(!page.was_dropped(subpage_ix));
         page.clear(subpage_ix);
         inner.slab.remove_unpin(key as usize).unwrap()
@@ -101,7 +102,7 @@ impl Scheduler {
     pub fn from_raw_handle(&self, key: u64) -> Option<SchedulerHandle> {
         let inner = self.inner.borrow();
         inner.slab.get(key as usize)?;
-        let (page, _) = inner.page(key);
+        let (page, _) = inner.get_page(key);
         let handle = SchedulerHandle::new(key, page.clone());
         Some(handle)
     }
@@ -110,7 +111,7 @@ impl Scheduler {
     pub fn insert<F: SchedulerFuture>(&self, future: F) -> SchedulerHandle {
         let mut inner = self.inner.borrow_mut();
         let key = inner.insert(Box::new(future));
-        let (page, _) = inner.page(key);
+        let (page, _) = inner.get_page(key);
         SchedulerHandle::new(key, page.clone())
     }
 
@@ -135,9 +136,12 @@ impl Scheduler {
                 for subpage_ix in BitIter::from(notified) {
                     if subpage_ix != 0 {
                         // Get future using our page indices and poll it!
-                        let ix = page_ix * WAKER_PAGE_SIZE + subpage_ix;
-                        let waker =
-                            unsafe { Waker::from_raw(inner.pages[page_ix].raw_waker(subpage_ix)) };
+                        let ix = page_ix * WAKER_BIT_LENGTH + subpage_ix;
+                        let waker = unsafe {
+                            let raw_waker: NonNull<u8> =
+                                inner.pages[page_ix].into_raw_waker_ref(subpage_ix);
+                            Waker::from_raw(WakerRef::new(raw_waker).into())
+                        };
                         let mut sub_ctx = Context::from_waker(&waker);
 
                         let pinned_ref = inner.slab.get_pin_mut(ix).unwrap();
@@ -158,7 +162,7 @@ impl Scheduler {
             if dropped != 0 {
                 for subpage_ix in BitIter::from(dropped) {
                     if subpage_ix != 0 {
-                        let ix = page_ix * WAKER_PAGE_SIZE + subpage_ix;
+                        let ix = page_ix * WAKER_BIT_LENGTH + subpage_ix;
                         inner.slab.remove(ix);
                         inner.pages[page_ix].clear(subpage_ix);
                     }

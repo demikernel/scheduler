@@ -16,6 +16,8 @@ use crate::waker64::Waker64;
 // Constants
 //==============================================================================
 
+pub const WAKER_BIT_LENGTH: usize = 64;
+
 /// Size of our pages. Should be the same size as the number of bits in the underlying data type
 /// representing our bit vectors.
 pub const WAKER_PAGE_SIZE: usize = 64;
@@ -46,9 +48,10 @@ pub struct WakerPage {
 // Associate Functions
 //==============================================================================
 
+/// Associate Functions for Waker Page
 impl WakerPage {
     pub fn notify(&self, ix: usize) {
-        debug_assert!(ix < 64);
+        debug_assert!(ix < WAKER_BIT_LENGTH);
         self.notified.fetch_or(1 << ix);
     }
 
@@ -64,17 +67,17 @@ impl WakerPage {
     }
 
     pub fn has_completed(&self, ix: usize) -> bool {
-        debug_assert!(ix < 64);
+        debug_assert!(ix < WAKER_BIT_LENGTH);
         self.completed.load() & (1 << ix) != 0
     }
 
     pub fn mark_completed(&self, ix: usize) {
-        debug_assert!(ix < 64);
+        debug_assert!(ix < WAKER_BIT_LENGTH);
         self.completed.fetch_or(1 << ix);
     }
 
     pub fn mark_dropped(&self, ix: usize) {
-        debug_assert!(ix < 64);
+        debug_assert!(ix < WAKER_BIT_LENGTH);
         self.dropped.fetch_or(1 << ix);
     }
 
@@ -83,22 +86,38 @@ impl WakerPage {
     }
 
     pub fn was_dropped(&self, ix: usize) -> bool {
-        debug_assert!(ix < 64);
+        debug_assert!(ix < WAKER_BIT_LENGTH);
         self.dropped.load() & (1 << ix) != 0
     }
 
     pub fn initialize(&self, ix: usize) {
-        debug_assert!(ix < 64);
+        debug_assert!(ix < WAKER_BIT_LENGTH);
         self.notified.fetch_or(1 << ix);
         self.completed.fetch_and(!(1 << ix));
         self.dropped.fetch_and(!(1 << ix));
     }
 
     pub fn clear(&self, ix: usize) {
-        debug_assert!(ix < 64);
-        let mask = !(1 << ix);
+        debug_assert!(ix < WAKER_BIT_LENGTH);
+        let mask: u64 = !(1 << ix);
         self.notified.fetch_and(mask);
         self.completed.fetch_and(mask);
         self.dropped.fetch_and(mask);
+    }
+}
+
+//==============================================================================
+// Unit Tests
+//==============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::WakerPage;
+    use super::WAKER_PAGE_SIZE;
+    use std::mem;
+
+    #[test]
+    fn test_size() {
+        assert_eq!(mem::size_of::<WakerPage>(), WAKER_PAGE_SIZE);
     }
 }
