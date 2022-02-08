@@ -7,10 +7,10 @@
 #![feature(test)]
 #![feature(allocator_api)]
 
+mod page;
 mod pin_slab;
 mod scheduler;
 mod waker64;
-mod waker_page;
 
 //==============================================================================
 // Exports

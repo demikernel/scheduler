@@ -17,8 +17,8 @@
 //==============================================================================
 
 use crate::{
+    page::{WakerPage, WakerPageRef, WAKER_PAGE_SIZE},
     pin_slab::PinSlab,
-    waker_page::{WakerPage, WakerPageRef, WAKER_PAGE_SIZE},
 };
 use ::bit_iter::BitIter;
 use ::std::{
