@@ -17,7 +17,7 @@
 //==============================================================================
 
 use crate::{
-    page::{WakerPage, WakerPageRef, WAKER_PAGE_SIZE},
+    page::{WakerPageRef, WAKER_PAGE_SIZE},
     pin_slab::PinSlab,
 };
 use ::bit_iter::BitIter;
@@ -77,7 +77,7 @@ impl<F: Future<Output = ()> + Unpin> Inner<F> {
 
         // Add a new page to hold this future's status if the current page is filled.
         while key >= self.pages.len() * WAKER_PAGE_SIZE {
-            self.pages.push(WakerPage::new());
+            self.pages.push(WakerPageRef::new());
         }
         let (page, subpage_ix) = self.page(key as u64);
         page.initialize(subpage_ix);
