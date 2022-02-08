@@ -10,7 +10,7 @@
 // Imports
 //==============================================================================
 
-use crate::waker64::WakerU64;
+use crate::waker64::Waker64;
 
 //==============================================================================
 // Constants
@@ -32,13 +32,13 @@ pub const WAKER_PAGE_SIZE: usize = 64;
 pub struct WakerPage {
     /// We use a single bit for our reference count implying only reference exists per future
     /// at a time.
-    pub refcount: WakerU64,
+    pub refcount: Waker64,
     /// A 64 element bit vector representing the futures for this page which have been notified
     /// by a wake and are ready to be polled again. The ith bit represents the ith future in the
     /// corresponding memory slab.
-    pub notified: WakerU64,
-    pub completed: WakerU64,
-    pub dropped: WakerU64,
+    pub notified: Waker64,
+    pub completed: Waker64,
+    pub dropped: Waker64,
     _unused: [u8; 32],
 }
 

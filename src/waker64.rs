@@ -12,17 +12,17 @@ use ::std::{cell::UnsafeCell, mem};
 //==============================================================================
 
 /// 64-Bit Waker
-pub struct WakerU64(UnsafeCell<u64>);
+pub struct Waker64(UnsafeCell<u64>);
 
 //==============================================================================
 // Associate Functions
 //==============================================================================
 
 /// Associate Functions for 64-Bit Wakers
-impl WakerU64 {
+impl Waker64 {
     /// Creates a [WakerU64] from a value.
     pub fn new(val: u64) -> Self {
-        WakerU64(UnsafeCell::new(val))
+        Waker64(UnsafeCell::new(val))
     }
 
     /// Applies the OR operator between `val` and the target [WakerU64].
@@ -77,4 +77,4 @@ impl WakerU64 {
 //==============================================================================
 
 /// Sync Trait Implementation for 64-Bit Wakers
-unsafe impl Sync for WakerU64 {}
+unsafe impl Sync for Waker64 {}

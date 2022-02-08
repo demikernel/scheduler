@@ -11,7 +11,7 @@
 //==============================================================================
 
 use super::page::WakerPage;
-use crate::waker64::WakerU64;
+use crate::waker64::Waker64;
 use ::std::{
     alloc::{Allocator, Global, Layout},
     mem,
@@ -41,10 +41,10 @@ impl WakerPageRef {
             Global.allocate(layout).expect("Allocation failed").cast();
         unsafe {
             let page = ptr.as_mut();
-            ptr::write(&mut page.refcount as *mut _, WakerU64::new(1));
-            ptr::write(&mut page.notified as *mut _, WakerU64::new(0));
-            ptr::write(&mut page.completed as *mut _, WakerU64::new(0));
-            ptr::write(&mut page.dropped as *mut _, WakerU64::new(0));
+            ptr::write(&mut page.refcount as *mut _, Waker64::new(1));
+            ptr::write(&mut page.notified as *mut _, Waker64::new(0));
+            ptr::write(&mut page.completed as *mut _, Waker64::new(0));
+            ptr::write(&mut page.dropped as *mut _, Waker64::new(0));
         }
         Self(ptr)
     }
