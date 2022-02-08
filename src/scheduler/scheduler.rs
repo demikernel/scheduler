@@ -18,7 +18,6 @@
 
 use crate::{
     pin_slab::PinSlab,
-    shared_waker::SharedWaker,
     waker_page::{WakerPage, WakerPageRef, WAKER_PAGE_SIZE},
 };
 use ::bit_iter::BitIter;
@@ -47,7 +46,6 @@ struct Inner<F: Future<Output = ()> + Unpin> {
     /// Holds the current status of which tasks are ready to be polled (scheduled) again.
     /// The statuses are arranged in pages.
     pages: Vec<WakerPageRef>,
-    root_waker: SharedWaker,
 }
 
 /// Future Scheduler
@@ -79,7 +77,7 @@ impl<F: Future<Output = ()> + Unpin> Inner<F> {
 
         // Add a new page to hold this future's status if the current page is filled.
         while key >= self.pages.len() * WAKER_PAGE_SIZE {
-            self.pages.push(WakerPage::new(self.root_waker.clone()));
+            self.pages.push(WakerPage::new());
         }
         let (page, subpage_ix) = self.page(key as u64);
         page.initialize(subpage_ix);
@@ -181,7 +179,6 @@ impl Default for Scheduler {
         let inner = Inner {
             slab: PinSlab::new(),
             pages: vec![],
-            root_waker: SharedWaker::default(),
         };
         Self {
             inner: Rc::new(RefCell::new(inner)),

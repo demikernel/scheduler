@@ -10,7 +10,7 @@
 // Imports
 //==============================================================================
 
-use crate::{shared_waker::SharedWaker, waker64::WakerU64};
+use crate::waker64::WakerU64;
 use ::std::{
     alloc::{Allocator, Global, Layout},
     mem,
@@ -46,8 +46,7 @@ pub struct WakerPage {
     notified: WakerU64,
     completed: WakerU64,
     dropped: WakerU64,
-    waker: SharedWaker,
-    _unused: [u8; 24],
+    _unused: [u8; 32],
 }
 
 //==============================================================================
@@ -56,7 +55,7 @@ pub struct WakerPage {
 
 impl WakerPage {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(waker: SharedWaker) -> WakerPageRef {
+    pub fn new() -> WakerPageRef {
         let layout = Layout::new::<WakerPage>();
         assert_eq!(layout.align(), 64);
         let mut ptr: NonNull<WakerPage> =
@@ -67,7 +66,6 @@ impl WakerPage {
             ptr::write(&mut page.notified as *mut _, WakerU64::new(0));
             ptr::write(&mut page.completed as *mut _, WakerU64::new(0));
             ptr::write(&mut page.dropped as *mut _, WakerU64::new(0));
-            ptr::write(&mut page.waker as *mut _, waker);
         }
         WakerPageRef(ptr)
     }
@@ -75,7 +73,6 @@ impl WakerPage {
     pub fn notify(&self, ix: usize) {
         debug_assert!(ix < 64);
         self.notified.fetch_or(1 << ix);
-        self.waker.wake();
     }
 
     /// Return a bit vector representing the futures in this page which are ready to be
@@ -102,7 +99,6 @@ impl WakerPage {
     pub fn mark_dropped(&self, ix: usize) {
         debug_assert!(ix < 64);
         self.dropped.fetch_or(1 << ix);
-        self.waker.wake();
     }
 
     pub fn take_dropped(&self) -> u64 {
@@ -283,7 +279,7 @@ impl Drop for WakerRef {
 
 #[cfg(test)]
 mod tests {
-    use super::{SharedWaker, WakerPage};
+    use super::WakerPage;
     use std::mem;
 
     #[test]
@@ -293,8 +289,7 @@ mod tests {
 
     #[test]
     fn test_basic() {
-        let waker = SharedWaker::default();
-        let p = WakerPage::new(waker);
+        let p = WakerPage::new();
 
         let q = p.waker(0);
         let r = p.waker(63);

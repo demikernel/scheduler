@@ -9,7 +9,6 @@
 
 mod pin_slab;
 mod scheduler;
-mod shared_waker;
 mod waker64;
 mod waker_page;
 
