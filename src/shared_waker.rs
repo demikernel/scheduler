@@ -1,48 +1,60 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-use std::{cell::UnsafeCell, rc::Rc, task::Waker};
+//==============================================================================
+// Imports
+//==============================================================================
+
+use ::std::{cell::UnsafeCell, rc::Rc, task::Waker};
 
 //==============================================================================
-// WakerSlot
+// Structures
 //==============================================================================
 
 struct WakerSlot(UnsafeCell<Option<Waker>>);
 
-unsafe impl Send for WakerSlot {}
-unsafe impl Sync for WakerSlot {}
-
-//==============================================================================
-// SharedWaker
-//==============================================================================
-
 pub struct SharedWaker(Rc<WakerSlot>);
 
+//==============================================================================
+// Associate Functions
+//==============================================================================
+
+/// Associate Functions for Shared Waker
+impl SharedWaker {
+    /// Wakes up the task that is associated with the target [SharedWaker].
+    pub fn wake(&self) {
+        let s: &mut Option<Waker> = unsafe {
+            let waker: &Rc<WakerSlot> = &self.0;
+            let cell: &UnsafeCell<Option<Waker>> = &waker.0;
+            &mut *cell.get()
+        };
+        if let Some(waker) = s.take() {
+            waker.wake();
+        }
+    }
+}
+
+//==============================================================================
+// Trait Implementations
+//==============================================================================
+
+/// Send Trait Implementation for Waker Slots
+unsafe impl Send for WakerSlot {}
+
+/// Sync Trait Implementation for Wake Slots
+unsafe impl Sync for WakerSlot {}
+
+/// Clone Trait Implementation for Shared Wakers
 impl Clone for SharedWaker {
     fn clone(&self) -> Self {
         Self(self.0.clone())
     }
 }
 
+/// Default Trait Implementation for Shared Wakers
 impl Default for SharedWaker {
+    /// Creates a [SharedWaker] with default values.
     fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl SharedWaker {
-    pub fn new() -> Self {
         Self(Rc::new(WakerSlot(UnsafeCell::new(None))))
-    }
-
-    pub fn wake(&self) {
-        let s = unsafe {
-            let waker = &self.0;
-            let cell = &waker.0;
-            &mut *cell.get()
-        };
-        if let Some(waker) = s.take() {
-            waker.wake();
-        }
     }
 }
