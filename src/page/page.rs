@@ -167,12 +167,12 @@ impl Default for WakerPage {
 
 #[cfg(test)]
 mod tests {
-    use super::WakerPage;
-    use super::WAKER_PAGE_SIZE;
+    use super::{WakerPage, WAKER_BIT_LENGTH, WAKER_PAGE_SIZE};
     use std::mem;
 
     #[test]
-    fn test_size() {
+    fn test_sizes() {
+        assert_eq!(WAKER_PAGE_SIZE, WAKER_BIT_LENGTH);
         assert_eq!(mem::size_of::<WakerPage>(), WAKER_PAGE_SIZE);
     }
 }
