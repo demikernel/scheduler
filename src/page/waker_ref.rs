@@ -150,8 +150,10 @@ pub const VTABLE: RawWakerVTable = RawWakerVTable::new(
 
 #[cfg(test)]
 mod tests {
-    use crate::page::{WakerPageRef, WakerRef};
+    use crate::page::{WakerPageRef, WakerRef, WAKER_BIT_LENGTH};
+    use ::rand::Rng;
     use ::std::ptr::NonNull;
+    use ::test::{black_box, Bencher};
 
     #[test]
     fn test_refcount() {
@@ -246,5 +248,29 @@ mod tests {
         drop(q);
         let refcount: u64 = p.refcount_get();
         assert_eq!(refcount, 1);
+    }
+
+    #[bench]
+    fn bench_wake(b: &mut Bencher) {
+        let p: WakerPageRef = WakerPageRef::default();
+        let ix: usize = rand::thread_rng().gen_range(0..WAKER_BIT_LENGTH);
+
+        b.iter(|| {
+            let raw_page_ref: NonNull<u8> = black_box(p.into_raw_waker_ref(ix));
+            let q: WakerRef = WakerRef::new(raw_page_ref);
+            q.wake();
+        });
+    }
+
+    #[bench]
+    fn bench_wake_by_ref(b: &mut Bencher) {
+        let p: WakerPageRef = WakerPageRef::default();
+        let ix: usize = rand::thread_rng().gen_range(0..WAKER_BIT_LENGTH);
+
+        b.iter(|| {
+            let raw_page_ref: NonNull<u8> = black_box(p.into_raw_waker_ref(ix));
+            let q: WakerRef = WakerRef::new(raw_page_ref);
+            q.wake_by_ref();
+        });
     }
 }
