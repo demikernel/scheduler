@@ -176,3 +176,89 @@ impl Default for Scheduler {
         }
     }
 }
+
+//==============================================================================
+// Unit Tests
+//==============================================================================
+
+#[cfg(test)]
+mod tests {
+    use crate::{Scheduler, SchedulerFuture, SchedulerHandle};
+    use ::std::{
+        any::Any,
+        future::Future,
+        pin::Pin,
+        task::{Context, Poll, Waker},
+    };
+    use ::test::{black_box, Bencher};
+
+    #[derive(Default)]
+    struct DummyFuture {
+        pub val: usize,
+    }
+
+    impl DummyFuture {
+        pub fn new(val: usize) -> Self {
+            let f: Self = Self { val };
+            f
+        }
+    }
+
+    impl Future for DummyFuture {
+        type Output = ();
+
+        fn poll(self: Pin<&mut Self>, ctx: &mut Context) -> Poll<Self::Output> {
+            match self.as_ref().val & 1 {
+                0 => Poll::Ready(()),
+                _ => {
+                    let waker: &Waker = ctx.waker();
+                    waker.wake_by_ref();
+                    Poll::Pending
+                }
+            }
+        }
+    }
+
+    impl SchedulerFuture for DummyFuture {
+        fn as_any(self: Box<Self>) -> Box<dyn Any> {
+            self
+        }
+
+        fn get_future(&self) -> &dyn Future<Output = ()> {
+            todo!()
+        }
+    }
+
+    #[bench]
+    fn bench_scheduler_insert(b: &mut Bencher) {
+        let scheduler: Scheduler = Scheduler::default();
+
+        b.iter(|| {
+            let future: DummyFuture = black_box(DummyFuture::default());
+            let handle: SchedulerHandle = scheduler.insert(future);
+            black_box(handle);
+        });
+    }
+
+    #[bench]
+    fn bench_scheduler_poll(b: &mut Bencher) {
+        let scheduler: Scheduler = Scheduler::default();
+        let mut handles: Vec<SchedulerHandle> = Vec::<SchedulerHandle>::with_capacity(1024);
+
+        // Insert 1024 futures in the scheduler.
+        // Half of them will be ready.
+        for val in 0..16 {
+            let future: DummyFuture = DummyFuture::new(val);
+            let handle: SchedulerHandle = scheduler.insert(future);
+            handles.push(handle);
+        }
+
+        // All futures are inserted in the scheduler with notification flag set.
+        // Poll the scheduler once to get rid of initial ready tasks.
+        scheduler.poll();
+
+        b.iter(|| {
+            black_box(scheduler.poll());
+        });
+    }
+}
