@@ -145,6 +145,23 @@ impl WakerPage {
 }
 
 //==============================================================================
+// Trait Implementations
+//==============================================================================
+
+/// Default Trait Implementation for Waker Pages
+impl Default for WakerPage {
+    fn default() -> Self {
+        Self {
+            refcount: Waker64::new(1),
+            notified: Waker64::new(0),
+            completed: Waker64::new(0),
+            dropped: Waker64::new(0),
+            _unused: Default::default(),
+        }
+    }
+}
+
+//==============================================================================
 // Unit Tests
 //==============================================================================
 
