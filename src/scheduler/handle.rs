@@ -5,7 +5,7 @@
 // Imports
 //==============================================================================
 
-use crate::page::{WakerPageRef, WAKER_PAGE_SIZE};
+use crate::page::{WakerPageRef, WAKER_BIT_LENGTH};
 
 //==============================================================================
 // Structures
@@ -42,7 +42,7 @@ impl SchedulerHandle {
 
     /// Queries whether or not the future associated with the target [SchedulerHandle] has complemented.
     pub fn has_completed(&self) -> bool {
-        let subpage_ix: usize = self.key.unwrap() as usize % WAKER_PAGE_SIZE;
+        let subpage_ix: usize = self.key.unwrap() as usize & (WAKER_BIT_LENGTH - 1);
         self.chunk.has_completed(subpage_ix)
     }
 
@@ -59,11 +59,9 @@ impl SchedulerHandle {
 /// Drop Trait Implementation for Scheduler Handlers
 impl Drop for SchedulerHandle {
     /// Decreases the reference count of the target [SchedulerHandle].
-    ///
-    /// TODO: we can speedup this with bit-wise operations.
     fn drop(&mut self) {
         if let Some(key) = self.key.take() {
-            let subpage_ix: usize = key as usize % WAKER_PAGE_SIZE;
+            let subpage_ix: usize = key as usize & (WAKER_BIT_LENGTH - 1);
             self.chunk.mark_dropped(subpage_ix);
         }
     }
