@@ -8,6 +8,7 @@ edition = "2018"
 [dependencies]
 bit-iter = "1.1.0"
 checkers = "0.6.0"
+rand = "0.8.4"
 
 [profile.release]
 lto = "fat"
