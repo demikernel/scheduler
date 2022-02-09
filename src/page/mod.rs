@@ -9,6 +9,6 @@ mod waker_ref;
 // Exports
 //==============================================================================
 
-pub use self::page::{WakerPage, WAKER_BIT_LENGTH, WAKER_BIT_LENGTH_SHIFT, WAKER_PAGE_SIZE};
+pub use self::page::{WakerPage, WAKER_PAGE_SIZE};
 pub use self::page_ref::WakerPageRef;
 pub use self::waker_ref::WakerRef;

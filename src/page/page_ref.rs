@@ -5,7 +5,10 @@
 // Imports
 //==============================================================================
 
-use crate::page::{WakerPage, WAKER_BIT_LENGTH, WAKER_PAGE_SIZE};
+use crate::{
+    page::{WakerPage, WAKER_PAGE_SIZE},
+    waker64::WAKER_BIT_LENGTH,
+};
 use ::std::{
     alloc::{Allocator, Global, Layout},
     mem,

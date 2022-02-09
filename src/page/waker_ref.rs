@@ -150,7 +150,10 @@ pub const VTABLE: RawWakerVTable = RawWakerVTable::new(
 
 #[cfg(test)]
 mod tests {
-    use crate::page::{WakerPageRef, WakerRef, WAKER_BIT_LENGTH};
+    use crate::{
+        page::{WakerPageRef, WakerRef},
+        waker64::WAKER_BIT_LENGTH,
+    };
     use ::rand::Rng;
     use ::std::ptr::NonNull;
     use ::test::{black_box, Bencher};
