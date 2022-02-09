@@ -11,10 +11,13 @@ use crate::waker64::Waker64;
 // Constants
 //==============================================================================
 
+/// Log2 of [WAKER_BIT_LENGTH].
+pub const WAKER_BIT_LENGTH_SHIFT: usize = 6;
+
 /// Number of Bits in a [Waker64]
 ///
 /// TODO: Move this to [crate::waker64].
-pub const WAKER_BIT_LENGTH: usize = 64;
+pub const WAKER_BIT_LENGTH: usize = 1 << WAKER_BIT_LENGTH_SHIFT;
 
 /// Size of Pages (in bytes)
 pub const WAKER_PAGE_SIZE: usize = 64;
