@@ -60,6 +60,13 @@ impl WakerRef {
     fn wake(self) {
         self.wake_by_ref()
     }
+
+    /// Gets the reference count of the target [WakerRef].
+    #[cfg(test)]
+    pub fn refcount_get(&self) -> u64 {
+        let (base_ptr, _): (NonNull<WakerPage>, _) = self.base_ptr();
+        unsafe { base_ptr.as_ref().refcount_get() }
+    }
 }
 
 //==============================================================================
