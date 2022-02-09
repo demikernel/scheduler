@@ -41,11 +41,11 @@ pub struct WakerPage {
     /// Reference count for the page.
     pub refcount: Waker64,
     /// Flags wether or not a given future has been notified.
-    pub notified: Waker64,
+    notified: Waker64,
     /// Flags whether or not a given future has completed.
-    pub completed: Waker64,
+    completed: Waker64,
     /// Flags whether or not a given future has ben dropped.
-    pub dropped: Waker64,
+    dropped: Waker64,
     /// Padding required to make the structure 64-byte big.
     _unused: [u8; 32],
 }
@@ -101,6 +101,15 @@ impl WakerPage {
     pub fn was_dropped(&self, ix: usize) -> bool {
         debug_assert!(ix < WAKER_BIT_LENGTH);
         self.dropped.load() & (1 << ix) != 0
+    }
+
+    /// Resets all flags in the target [WakerPage].
+    /// The reference count for the target page is reset to one.
+    pub fn reset(&mut self) {
+        self.refcount.swap(1);
+        self.notified.swap(0);
+        self.completed.swap(0);
+        self.dropped.swap(0);
     }
 
     /// Initialize flags for the `ix` future in the target [WakerPage].
