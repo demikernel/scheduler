@@ -12,7 +12,7 @@
 //==============================================================================
 
 use crate::{
-    page::{WakerPageRef, WakerRef, WAKER_BIT_LENGTH},
+    page::{WakerPageRef, WakerRef, WAKER_BIT_LENGTH, WAKER_BIT_LENGTH_SHIFT},
     pin_slab::PinSlab,
     SchedulerFuture, SchedulerHandle,
 };
@@ -54,7 +54,7 @@ impl<F: Future<Output = ()> + Unpin> Inner<F> {
     fn get_page(&self, key: u64) -> (&WakerPageRef, usize) {
         let key: usize = key as usize;
         let (page_ix, subpage_ix): (usize, usize) =
-            (key / WAKER_BIT_LENGTH, key % WAKER_BIT_LENGTH);
+            (key >> WAKER_BIT_LENGTH_SHIFT, key & (WAKER_BIT_LENGTH - 1));
         (&self.pages[page_ix], subpage_ix)
     }
 
@@ -63,7 +63,7 @@ impl<F: Future<Output = ()> + Unpin> Inner<F> {
         let key: usize = self.slab.insert(future);
 
         // Add a new page to hold this future's status if the current page is filled.
-        while key >= self.pages.len() * WAKER_BIT_LENGTH {
+        while key >= self.pages.len() << WAKER_BIT_LENGTH_SHIFT {
             self.pages.push(WakerPageRef::default());
         }
         let (page, subpage_ix): (&WakerPageRef, usize) = self.get_page(key as u64);
@@ -106,23 +106,20 @@ impl Scheduler {
     /// they can invoke to notify the scheduler that future should be polled again.
     pub fn poll(&self) {
         let mut inner: RefMut<Inner<Box<dyn SchedulerFuture>>> = self.inner.borrow_mut();
-        // inner.root_waker.register(ctx.waker());
 
-        // TODO: rewrite this loop to use high-level iterators instead of indexes.
-        // Iterate through all our pages finding the tasks that are ready to be polled again
-        // (notified) and dropped tasks which can be removed.
+        // Iterate through pages.
         for page_ix in 0..inner.pages.len() {
             let (notified, dropped): (u64, u64) = {
                 let page: &mut WakerPageRef = &mut inner.pages[page_ix];
                 (page.take_notified(), page.take_dropped())
             };
-            // Non-zero means at least one future in this page should be polled.
+            // There is some notified task in this page, so iterate through it.
             if notified != 0 {
-                // Iterate through this page's bit vector polling the futures that are ready.
                 for subpage_ix in BitIter::from(notified) {
+                    // Handle notified tasks only.
                     if subpage_ix != 0 {
                         // Get future using our page indices and poll it!
-                        let ix: usize = page_ix * WAKER_BIT_LENGTH + subpage_ix;
+                        let ix: usize = (page_ix << WAKER_BIT_LENGTH_SHIFT) + subpage_ix;
                         let waker: Waker = unsafe {
                             let raw_waker: NonNull<u8> =
                                 inner.pages[page_ix].into_raw_waker_ref(subpage_ix);
@@ -134,6 +131,7 @@ impl Scheduler {
                             inner.slab.get_pin_mut(ix).unwrap();
                         let pinned_ptr = unsafe { Pin::into_inner_unchecked(pinned_ref) as *mut _ };
 
+                        // Poll future.
                         drop(inner);
                         let pinned_ref = unsafe { Pin::new_unchecked(&mut *pinned_ptr) };
                         let poll_result: Poll<()> = Future::poll(pinned_ref, &mut sub_ctx);
@@ -146,10 +144,12 @@ impl Scheduler {
                     }
                 }
             }
+            // There is some dropped task in this page, so iterate through it.
             if dropped != 0 {
+                // Handle dropped tasks only.
                 for subpage_ix in BitIter::from(dropped) {
                     if subpage_ix != 0 {
-                        let ix: usize = page_ix * WAKER_BIT_LENGTH + subpage_ix;
+                        let ix: usize = (page_ix << WAKER_BIT_LENGTH_SHIFT) + subpage_ix;
                         inner.slab.remove(ix);
                         inner.pages[page_ix].clear(subpage_ix);
                     }
