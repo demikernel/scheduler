@@ -142,6 +142,12 @@ impl WakerPage {
     pub fn refcount_dec(&self) -> u64 {
         self.refcount.fetch_sub(1)
     }
+
+    /// Gets the reference count of the target [WakerPage].
+    #[cfg(test)]
+    pub fn refcount_get(&self) -> u64 {
+        self.refcount.load()
+    }
 }
 
 //==============================================================================
