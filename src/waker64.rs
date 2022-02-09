@@ -15,8 +15,6 @@ use ::std::{cell::UnsafeCell, mem};
 pub const WAKER_BIT_LENGTH_SHIFT: usize = 6;
 
 /// Number of Bits in a [Waker64]
-///
-/// TODO: Move this to [crate::waker64].
 pub const WAKER_BIT_LENGTH: usize = 1 << WAKER_BIT_LENGTH_SHIFT;
 
 //==============================================================================
