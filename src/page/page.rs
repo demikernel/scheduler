@@ -168,11 +168,78 @@ impl Default for WakerPage {
 #[cfg(test)]
 mod tests {
     use super::{WakerPage, WAKER_BIT_LENGTH, WAKER_PAGE_SIZE};
-    use std::mem;
+    use ::rand::Rng;
+    use ::std::mem;
+    use ::test::{black_box, Bencher};
 
     #[test]
     fn test_sizes() {
         assert_eq!(WAKER_PAGE_SIZE, WAKER_BIT_LENGTH);
         assert_eq!(mem::size_of::<WakerPage>(), WAKER_PAGE_SIZE);
+    }
+
+    #[bench]
+    fn bench_notify(b: &mut Bencher) {
+        let pg: WakerPage = WakerPage::default();
+        let x: usize = rand::thread_rng().gen_range(0..WAKER_BIT_LENGTH);
+
+        b.iter(|| {
+            let ix: usize = black_box(x);
+            pg.notify(ix);
+        });
+    }
+
+    #[bench]
+    fn bench_mark_dropped(b: &mut Bencher) {
+        let pg: WakerPage = WakerPage::default();
+        let x: usize = rand::thread_rng().gen_range(0..WAKER_BIT_LENGTH);
+
+        b.iter(|| {
+            let ix: usize = black_box(x);
+            pg.mark_dropped(ix);
+        });
+    }
+
+    #[bench]
+    fn bench_mark_completed(b: &mut Bencher) {
+        let pg: WakerPage = WakerPage::default();
+        let x: usize = rand::thread_rng().gen_range(0..WAKER_BIT_LENGTH);
+
+        b.iter(|| {
+            let ix: usize = black_box(x);
+            pg.mark_completed(ix);
+        });
+    }
+
+    #[bench]
+    fn bench_take_notified(b: &mut Bencher) {
+        let pg: WakerPage = WakerPage::default();
+
+        // Initialize 8 random bits.
+        for _ in 0..8 {
+            let ix: usize = rand::thread_rng().gen_range(0..WAKER_BIT_LENGTH);
+            pg.initialize(ix);
+        }
+
+        b.iter(|| {
+            let x: u64 = pg.take_notified();
+            black_box(x);
+        });
+    }
+
+    #[bench]
+    fn bench_take_dropped(b: &mut Bencher) {
+        let pg: WakerPage = WakerPage::default();
+
+        // Initialize 8 random bits.
+        for _ in 0..8 {
+            let ix: usize = rand::thread_rng().gen_range(0..WAKER_BIT_LENGTH);
+            pg.initialize(ix);
+        }
+
+        b.iter(|| {
+            let x: u64 = pg.take_dropped();
+            black_box(x);
+        });
     }
 }
