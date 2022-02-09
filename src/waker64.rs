@@ -78,3 +78,81 @@ impl Waker64 {
 
 /// Sync Trait Implementation for 64-Bit Wakers
 unsafe impl Sync for Waker64 {}
+
+//==============================================================================
+// Unit Tests
+//==============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::Waker64;
+    use ::rand::Rng;
+    use ::test::{black_box, Bencher};
+
+    #[bench]
+    fn bench_fetch_and(b: &mut Bencher) {
+        let x: u64 = rand::thread_rng().gen_range(0..64);
+        let w64: Waker64 = Waker64::new(0);
+
+        b.iter(|| {
+            let val: u64 = black_box(x);
+            w64.fetch_and(val);
+        });
+    }
+
+    #[bench]
+    fn bench_fetch_or(b: &mut Bencher) {
+        let x: u64 = rand::thread_rng().gen_range(0..64);
+        let w64: Waker64 = Waker64::new(0);
+
+        b.iter(|| {
+            let val: u64 = black_box(x);
+            w64.fetch_or(val);
+        });
+    }
+
+    #[bench]
+    fn bench_fetch_add(b: &mut Bencher) {
+        let x: u64 = rand::thread_rng().gen_range(0..64);
+        let w64: Waker64 = Waker64::new(0);
+
+        b.iter(|| {
+            let val: u64 = black_box(x);
+            w64.fetch_add(val);
+        });
+    }
+
+    #[bench]
+    fn bench_fetch_sub(b: &mut Bencher) {
+        let x: u64 = rand::thread_rng().gen_range(0..64);
+        let w64: Waker64 = Waker64::new(0);
+
+        b.iter(|| {
+            let val: u64 = black_box(x);
+            w64.fetch_sub(val);
+        });
+    }
+
+    #[bench]
+    fn bench_load(b: &mut Bencher) {
+        let x: u64 = rand::thread_rng().gen_range(0..64);
+        let w64: Waker64 = Waker64::new(x);
+
+        b.iter(|| {
+            let val: u64 = w64.load();
+            black_box(val);
+        });
+    }
+
+    #[bench]
+    fn bench_swap(b: &mut Bencher) {
+        let x: u64 = rand::thread_rng().gen_range(0..64);
+        let w64: Waker64 = Waker64::new(0);
+
+        b.iter(|| {
+            let val: u64 = black_box(x);
+            let oldval: u64 = w64.swap(val);
+            black_box(oldval);
+        });
+    }
+}
