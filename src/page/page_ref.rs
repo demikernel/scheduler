@@ -58,7 +58,7 @@ impl WakerPageRef {
 /// Clone Trait Implementation for Waker Page References
 impl Clone for WakerPageRef {
     fn clone(&self) -> Self {
-        let old_refount: u64 = unsafe { self.0.as_ref().refcount.fetch_add(1) };
+        let old_refount: u64 = unsafe { self.0.as_ref().refcount_inc() };
         debug_assert!(old_refount < std::u64::MAX);
         Self(self.0)
     }
@@ -68,7 +68,7 @@ impl Clone for WakerPageRef {
 impl Drop for WakerPageRef {
     fn drop(&mut self) {
         unsafe {
-            if self.0.as_ref().refcount.fetch_sub(1) != 1 {
+            if self.0.as_ref().refcount_dec() != 1 {
                 return;
             }
             ptr::drop_in_place(self.0.as_mut());

@@ -39,7 +39,7 @@ pub const WAKER_PAGE_SIZE: usize = 64;
 #[repr(align(64))]
 pub struct WakerPage {
     /// Reference count for the page.
-    pub refcount: Waker64,
+    refcount: Waker64,
     /// Flags wether or not a given future has been notified.
     notified: Waker64,
     /// Flags whether or not a given future has completed.
@@ -129,6 +129,18 @@ impl WakerPage {
         self.notified.fetch_and(mask);
         self.completed.fetch_and(mask);
         self.dropped.fetch_and(mask);
+    }
+
+    /// Increments the reference count of the target [WakerPage].
+    /// The old reference count is returned.
+    pub fn refcount_inc(&self) -> u64 {
+        self.refcount.fetch_add(1)
+    }
+
+    /// Decrements the reference count of the target [WakerPage].
+    /// The old reference count is returned.
+    pub fn refcount_dec(&self) -> u64 {
+        self.refcount.fetch_sub(1)
     }
 }
 
