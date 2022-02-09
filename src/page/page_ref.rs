@@ -1,16 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-//! A "page" is made up of 64 contiguous entries, each entry represents the state of a task/future
-//! in our scheduler. This page is represented by a 64-bit integer where the ith bit corresponds to
-//! the ith task in that page. This way fast bit arithmetic can be used to index into a task's
-//! state and uniquely identify a task among multiple pages.
-
 //==============================================================================
 // Imports
 //==============================================================================
 
-use crate::page::{WakerPage, WAKER_PAGE_SIZE};
+use crate::page::{WakerPage, WAKER_BIT_LENGTH, WAKER_PAGE_SIZE};
 use ::std::{
     alloc::{Allocator, Global, Layout},
     mem,
@@ -23,23 +18,46 @@ use ::std::{
 //==============================================================================
 
 /// Waker Page Reference
+///
+/// The [crate::Scheduler] relies on this custom reference type to drive the
+/// state of futures.
 pub struct WakerPageRef(NonNull<WakerPage>);
 
 //==============================================================================
 // Associate Functions
 //==============================================================================
 
-/// Associate Functions for Waker Page Reference
+/// Associate Functions for Waker Page References
 impl WakerPageRef {
+    /// Creates a new waker page reference from a non-null reference to a [WakerPage].
     pub fn new(waker_page: NonNull<WakerPage>) -> Self {
-        Self { 0: waker_page }
+        Self(waker_page)
     }
 
-    /// Creates a new waker using the local index and our WakerPage reference.
+    /// Casts the target [WakerPageRef] into a [NonNull<u8>].
+    ///
+    /// The reference itself is not intended for reading/writing to
+    /// member-fields of a [WakerPage], once it does not point to meaningful
+    /// information on this structure. Indeed, the reference is carefully
+    /// constructed so that: if points to the base address location of the
+    /// structure plus an  offset (in bytes) that identifies some particular
+    /// future in the underlying [WakerPage]. The scheduler relies on this hack
+    /// to cast back the reference to a [WakerPage] and access the futures
+    /// within it correctly.
+    ///
+    /// This hack only works because: (i) the number of bits in
+    /// [crate::waker64::Waker64]s match the number of bytes in [WakerPage]s;
+    /// and (ii) [WakerPage]s are aligned to their on memory addresses multiple
+    /// of their own size (ie: aligned to N*sizeof([WakerPage])).
+    ///
+    /// If you don't understand the above explanation, take some time to
+    /// carefully review the pointer arithmetic interaction between
+    /// [crate::page::WakerPage], [crate::page::WakerPageRef],
+    /// [crate::page::WakerRef] and [crate::Scheduler].
     pub fn into_raw_waker_ref(&self, ix: usize) -> NonNull<u8> {
-        debug_assert!(ix < WAKER_PAGE_SIZE);
+        debug_assert!(ix < WAKER_BIT_LENGTH);
 
-        // Bump the refcount for our new reference.
+        // Bump the refcount of the underlying waker page.
         let self_: WakerPageRef = self.clone();
         mem::forget(self_);
 
@@ -89,10 +107,12 @@ impl Deref for WakerPageRef {
 /// Default Trait Implementation for Waker Page References
 impl Default for WakerPageRef {
     fn default() -> Self {
-        let layout = Layout::new::<WakerPage>();
+        let layout: Layout = Layout::new::<WakerPage>();
         assert_eq!(layout.align(), WAKER_PAGE_SIZE);
-        let mut ptr: NonNull<WakerPage> =
-            Global.allocate(layout).expect("Allocation failed").cast();
+        let mut ptr: NonNull<WakerPage> = Global
+            .allocate(layout)
+            .expect("Failed to allocate WakerPage")
+            .cast();
         unsafe {
             let page: &mut WakerPage = ptr.as_mut();
             page.reset();
