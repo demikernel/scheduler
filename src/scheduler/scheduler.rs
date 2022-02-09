@@ -12,8 +12,9 @@
 //==============================================================================
 
 use crate::{
-    page::{WakerPageRef, WakerRef, WAKER_BIT_LENGTH, WAKER_BIT_LENGTH_SHIFT},
+    page::{WakerPageRef, WakerRef},
     pin_slab::PinSlab,
+    waker64::{WAKER_BIT_LENGTH, WAKER_BIT_LENGTH_SHIFT},
     SchedulerFuture, SchedulerHandle,
 };
 use ::bit_iter::BitIter;
