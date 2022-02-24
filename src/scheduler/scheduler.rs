@@ -212,6 +212,7 @@ mod tests {
             match self.as_ref().val & 1 {
                 0 => Poll::Ready(()),
                 _ => {
+                    self.get_mut().val += 1;
                     let waker: &Waker = ctx.waker();
                     waker.wake_by_ref();
                     Poll::Pending
