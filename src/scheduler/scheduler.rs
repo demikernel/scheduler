@@ -242,6 +242,22 @@ mod tests {
         });
     }
 
+    #[test]
+    fn scheduler_poll_once() {
+        let scheduler: Scheduler = Scheduler::default();
+
+        // Insert a single future in the scheduler. This future shall complete
+        // with a single pool operation.
+        let future: DummyFuture = DummyFuture::new(0);
+        let handle: SchedulerHandle = scheduler.insert(future);
+
+        // All futures are inserted in the scheduler with notification flag set.
+        // By polling once, our future should complete.
+        scheduler.poll();
+
+        assert_eq!(handle.has_completed(), true);
+    }
+
     #[bench]
     fn bench_scheduler_poll(b: &mut Bencher) {
         let scheduler: Scheduler = Scheduler::default();
