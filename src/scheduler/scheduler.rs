@@ -248,15 +248,11 @@ mod tests {
 
         // Insert 1024 futures in the scheduler.
         // Half of them will be ready.
-        for val in 0..16 {
+        for val in 0..1024 {
             let future: DummyFuture = DummyFuture::new(val);
             let handle: SchedulerHandle = scheduler.insert(future);
             handles.push(handle);
         }
-
-        // All futures are inserted in the scheduler with notification flag set.
-        // Poll the scheduler once to get rid of initial ready tasks.
-        scheduler.poll();
 
         b.iter(|| {
             black_box(scheduler.poll());
