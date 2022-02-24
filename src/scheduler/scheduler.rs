@@ -118,30 +118,28 @@ impl Scheduler {
             if notified != 0 {
                 for subpage_ix in BitIter::from(notified) {
                     // Handle notified tasks only.
-                    if subpage_ix != 0 {
-                        // Get future using our page indices and poll it!
-                        let ix: usize = (page_ix << WAKER_BIT_LENGTH_SHIFT) + subpage_ix;
-                        let waker: Waker = unsafe {
-                            let raw_waker: NonNull<u8> =
-                                inner.pages[page_ix].into_raw_waker_ref(subpage_ix);
-                            Waker::from_raw(WakerRef::new(raw_waker).into())
-                        };
-                        let mut sub_ctx: Context = Context::from_waker(&waker);
+                    // Get future using our page indices and poll it!
+                    let ix: usize = (page_ix << WAKER_BIT_LENGTH_SHIFT) + subpage_ix;
+                    let waker: Waker = unsafe {
+                        let raw_waker: NonNull<u8> =
+                            inner.pages[page_ix].into_raw_waker_ref(subpage_ix);
+                        Waker::from_raw(WakerRef::new(raw_waker).into())
+                    };
+                    let mut sub_ctx: Context = Context::from_waker(&waker);
 
-                        let pinned_ref: Pin<&mut Box<dyn SchedulerFuture>> =
-                            inner.slab.get_pin_mut(ix).unwrap();
-                        let pinned_ptr = unsafe { Pin::into_inner_unchecked(pinned_ref) as *mut _ };
+                    let pinned_ref: Pin<&mut Box<dyn SchedulerFuture>> =
+                        inner.slab.get_pin_mut(ix).unwrap();
+                    let pinned_ptr = unsafe { Pin::into_inner_unchecked(pinned_ref) as *mut _ };
 
-                        // Poll future.
-                        drop(inner);
-                        let pinned_ref = unsafe { Pin::new_unchecked(&mut *pinned_ptr) };
-                        let poll_result: Poll<()> = Future::poll(pinned_ref, &mut sub_ctx);
-                        inner = self.inner.borrow_mut();
+                    // Poll future.
+                    drop(inner);
+                    let pinned_ref = unsafe { Pin::new_unchecked(&mut *pinned_ptr) };
+                    let poll_result: Poll<()> = Future::poll(pinned_ref, &mut sub_ctx);
+                    inner = self.inner.borrow_mut();
 
-                        match poll_result {
-                            Poll::Ready(()) => inner.pages[page_ix].mark_completed(subpage_ix),
-                            Poll::Pending => (),
-                        }
+                    match poll_result {
+                        Poll::Ready(()) => inner.pages[page_ix].mark_completed(subpage_ix),
+                        Poll::Pending => (),
                     }
                 }
             }
@@ -212,6 +210,7 @@ mod tests {
             match self.as_ref().val & 1 {
                 0 => Poll::Ready(()),
                 _ => {
+                    self.get_mut().val += 1;
                     let waker: &Waker = ctx.waker();
                     waker.wake_by_ref();
                     Poll::Pending
@@ -241,6 +240,43 @@ mod tests {
         });
     }
 
+    #[test]
+    fn scheduler_poll_once() {
+        let scheduler: Scheduler = Scheduler::default();
+
+        // Insert a single future in the scheduler. This future shall complete
+        // with a single pool operation.
+        let future: DummyFuture = DummyFuture::new(0);
+        let handle: SchedulerHandle = scheduler.insert(future);
+
+        // All futures are inserted in the scheduler with notification flag set.
+        // By polling once, our future should complete.
+        scheduler.poll();
+
+        assert_eq!(handle.has_completed(), true);
+    }
+
+    #[test]
+    fn scheduler_poll_twice() {
+        let scheduler: Scheduler = Scheduler::default();
+
+        // Insert a single future in the scheduler. This future shall complete
+        // with two poll operations.
+        let future: DummyFuture = DummyFuture::new(1);
+        let handle: SchedulerHandle = scheduler.insert(future);
+
+        // All futures are inserted in the scheduler with notification flag set.
+        // By polling once, this future should make a transition.
+        scheduler.poll();
+
+        assert_eq!(handle.has_completed(), false);
+
+        // This shall make the future ready.
+        scheduler.poll();
+
+        assert_eq!(handle.has_completed(), true);
+    }
+
     #[bench]
     fn bench_scheduler_poll(b: &mut Bencher) {
         let scheduler: Scheduler = Scheduler::default();
@@ -248,15 +284,11 @@ mod tests {
 
         // Insert 1024 futures in the scheduler.
         // Half of them will be ready.
-        for val in 0..16 {
+        for val in 0..1024 {
             let future: DummyFuture = DummyFuture::new(val);
             let handle: SchedulerHandle = scheduler.insert(future);
             handles.push(handle);
         }
-
-        // All futures are inserted in the scheduler with notification flag set.
-        // Poll the scheduler once to get rid of initial ready tasks.
-        scheduler.poll();
 
         b.iter(|| {
             black_box(scheduler.poll());
