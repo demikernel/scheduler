@@ -118,30 +118,28 @@ impl Scheduler {
             if notified != 0 {
                 for subpage_ix in BitIter::from(notified) {
                     // Handle notified tasks only.
-                    if subpage_ix != 0 {
-                        // Get future using our page indices and poll it!
-                        let ix: usize = (page_ix << WAKER_BIT_LENGTH_SHIFT) + subpage_ix;
-                        let waker: Waker = unsafe {
-                            let raw_waker: NonNull<u8> =
-                                inner.pages[page_ix].into_raw_waker_ref(subpage_ix);
-                            Waker::from_raw(WakerRef::new(raw_waker).into())
-                        };
-                        let mut sub_ctx: Context = Context::from_waker(&waker);
+                    // Get future using our page indices and poll it!
+                    let ix: usize = (page_ix << WAKER_BIT_LENGTH_SHIFT) + subpage_ix;
+                    let waker: Waker = unsafe {
+                        let raw_waker: NonNull<u8> =
+                            inner.pages[page_ix].into_raw_waker_ref(subpage_ix);
+                        Waker::from_raw(WakerRef::new(raw_waker).into())
+                    };
+                    let mut sub_ctx: Context = Context::from_waker(&waker);
 
-                        let pinned_ref: Pin<&mut Box<dyn SchedulerFuture>> =
-                            inner.slab.get_pin_mut(ix).unwrap();
-                        let pinned_ptr = unsafe { Pin::into_inner_unchecked(pinned_ref) as *mut _ };
+                    let pinned_ref: Pin<&mut Box<dyn SchedulerFuture>> =
+                        inner.slab.get_pin_mut(ix).unwrap();
+                    let pinned_ptr = unsafe { Pin::into_inner_unchecked(pinned_ref) as *mut _ };
 
-                        // Poll future.
-                        drop(inner);
-                        let pinned_ref = unsafe { Pin::new_unchecked(&mut *pinned_ptr) };
-                        let poll_result: Poll<()> = Future::poll(pinned_ref, &mut sub_ctx);
-                        inner = self.inner.borrow_mut();
+                    // Poll future.
+                    drop(inner);
+                    let pinned_ref = unsafe { Pin::new_unchecked(&mut *pinned_ptr) };
+                    let poll_result: Poll<()> = Future::poll(pinned_ref, &mut sub_ctx);
+                    inner = self.inner.borrow_mut();
 
-                        match poll_result {
-                            Poll::Ready(()) => inner.pages[page_ix].mark_completed(subpage_ix),
-                            Poll::Pending => (),
-                        }
+                    match poll_result {
+                        Poll::Ready(()) => inner.pages[page_ix].mark_completed(subpage_ix),
+                        Poll::Pending => (),
                     }
                 }
             }
