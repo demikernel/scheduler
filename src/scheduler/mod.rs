@@ -3,10 +3,13 @@
 
 mod future;
 mod handle;
+mod result;
 mod scheduler;
 
 //==============================================================================
 // Exports
 //==============================================================================
 
-pub use self::{future::SchedulerFuture, handle::SchedulerHandle, scheduler::Scheduler};
+pub use self::{
+    future::SchedulerFuture, handle::SchedulerHandle, result::FutureResult, scheduler::Scheduler,
+};
