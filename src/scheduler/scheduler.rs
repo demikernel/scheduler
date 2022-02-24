@@ -258,6 +258,27 @@ mod tests {
         assert_eq!(handle.has_completed(), true);
     }
 
+    #[test]
+    fn scheduler_poll_twice() {
+        let scheduler: Scheduler = Scheduler::default();
+
+        // Insert a single future in the scheduler. This future shall complete
+        // with two poll operations.
+        let future: DummyFuture = DummyFuture::new(1);
+        let handle: SchedulerHandle = scheduler.insert(future);
+
+        // All futures are inserted in the scheduler with notification flag set.
+        // By polling once, this future should make a transition.
+        scheduler.poll();
+
+        assert_eq!(handle.has_completed(), false);
+
+        // This shall make the future ready.
+        scheduler.poll();
+
+        assert_eq!(handle.has_completed(), true);
+    }
+
     #[bench]
     fn bench_scheduler_poll(b: &mut Bencher) {
         let scheduler: Scheduler = Scheduler::default();
