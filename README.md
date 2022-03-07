@@ -1,16 +1,16 @@
 Catwalk
 ==========
 
+[![Join us on Slack!](https://img.shields.io/badge/chat-on%20Slack-e01563.svg)](https://join.slack.com/t/demikernel/shared_invite/zt-11i6lgaw5-HFE_IAls7gUX3kp1XSab0g)
+[![Build](https://github.com/demikernel/catwalk/actions/workflows/build.yml/badge.svg)](https://github.com/demikernel/catwalk/actions/workflows/build.yml)
+[![Test](https://github.com/demikernel/catwalk/actions/workflows/test.yml/badge.svg)](https://github.com/demikernel/catwalk/actions/workflows/test.yml)
+
 _Catwalk_ is a fast engine for scheduling futures.
 
 > This project is a component of _Demikernel_ - a libOS architecture for
 kernel-bypass devices.
 
 > To read more about _Demikernel_ check out https://aka.ms/demikernel.
-
-This project was inspired by many others. Special thanks to the following ones:
-
-- [unicycle](https://github.com/udoprog/unicycle): a catwalk for driving a large number of futures.
 
 Building and Running
 ---------------------

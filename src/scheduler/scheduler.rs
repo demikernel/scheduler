@@ -162,7 +162,7 @@ impl Scheduler {
 // Trait Implementations
 //==============================================================================
 
-/// Default Trait IMplementation for Scheduler
+/// Default Trait Implementation for Scheduler
 impl Default for Scheduler {
     /// Creates a scheduler with default values.
     fn default() -> Self {
