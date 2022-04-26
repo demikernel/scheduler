@@ -22,4 +22,9 @@ extern crate test;
 // Exports
 //==============================================================================
 
-pub use scheduler::{FutureResult, Scheduler, SchedulerFuture, SchedulerHandle};
+pub use scheduler::{
+    FutureResult,
+    Scheduler,
+    SchedulerFuture,
+    SchedulerHandle,
+};

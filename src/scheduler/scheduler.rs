@@ -12,19 +12,34 @@
 //==============================================================================
 
 use crate::{
-    page::{WakerPageRef, WakerRef},
+    page::{
+        WakerPageRef,
+        WakerRef,
+    },
     pin_slab::PinSlab,
-    waker64::{WAKER_BIT_LENGTH, WAKER_BIT_LENGTH_SHIFT},
-    SchedulerFuture, SchedulerHandle,
+    waker64::{
+        WAKER_BIT_LENGTH,
+        WAKER_BIT_LENGTH_SHIFT,
+    },
+    SchedulerFuture,
+    SchedulerHandle,
 };
 use ::bit_iter::BitIter;
 use ::std::{
-    cell::{Ref, RefCell, RefMut},
+    cell::{
+        Ref,
+        RefCell,
+        RefMut,
+    },
     future::Future,
     pin::Pin,
     ptr::NonNull,
     rc::Rc,
-    task::{Context, Poll, Waker},
+    task::{
+        Context,
+        Poll,
+        Waker,
+    },
 };
 
 //==============================================================================
@@ -54,8 +69,7 @@ impl<F: Future<Output = ()> + Unpin> Inner<F> {
     /// Computes the [WakerPageRef] and offset of a given task based on its `key`.
     fn get_page(&self, key: u64) -> (&WakerPageRef, usize) {
         let key: usize = key as usize;
-        let (page_ix, subpage_ix): (usize, usize) =
-            (key >> WAKER_BIT_LENGTH_SHIFT, key & (WAKER_BIT_LENGTH - 1));
+        let (page_ix, subpage_ix): (usize, usize) = (key >> WAKER_BIT_LENGTH_SHIFT, key & (WAKER_BIT_LENGTH - 1));
         (&self.pages[page_ix], subpage_ix)
     }
 
@@ -121,14 +135,12 @@ impl Scheduler {
                     // Get future using our page indices and poll it!
                     let ix: usize = (page_ix << WAKER_BIT_LENGTH_SHIFT) + subpage_ix;
                     let waker: Waker = unsafe {
-                        let raw_waker: NonNull<u8> =
-                            inner.pages[page_ix].into_raw_waker_ref(subpage_ix);
+                        let raw_waker: NonNull<u8> = inner.pages[page_ix].into_raw_waker_ref(subpage_ix);
                         Waker::from_raw(WakerRef::new(raw_waker).into())
                     };
                     let mut sub_ctx: Context = Context::from_waker(&waker);
 
-                    let pinned_ref: Pin<&mut Box<dyn SchedulerFuture>> =
-                        inner.slab.get_pin_mut(ix).unwrap();
+                    let pinned_ref: Pin<&mut Box<dyn SchedulerFuture>> = inner.slab.get_pin_mut(ix).unwrap();
                     let pinned_ptr = unsafe { Pin::into_inner_unchecked(pinned_ref) as *mut _ };
 
                     // Poll future.
@@ -182,14 +194,25 @@ impl Default for Scheduler {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Scheduler, SchedulerFuture, SchedulerHandle};
+    use crate::{
+        Scheduler,
+        SchedulerFuture,
+        SchedulerHandle,
+    };
     use ::std::{
         any::Any,
         future::Future,
         pin::Pin,
-        task::{Context, Poll, Waker},
+        task::{
+            Context,
+            Poll,
+            Waker,
+        },
     };
-    use ::test::{black_box, Bencher};
+    use ::test::{
+        black_box,
+        Bencher,
+    };
 
     #[derive(Default)]
     struct DummyFuture {
@@ -214,7 +237,7 @@ mod tests {
                     let waker: &Waker = ctx.waker();
                     waker.wake_by_ref();
                     Poll::Pending
-                }
+                },
             }
         }
     }

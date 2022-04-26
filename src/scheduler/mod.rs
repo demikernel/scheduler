@@ -11,5 +11,8 @@ mod scheduler;
 //==============================================================================
 
 pub use self::{
-    future::SchedulerFuture, handle::SchedulerHandle, result::FutureResult, scheduler::Scheduler,
+    future::SchedulerFuture,
+    handle::SchedulerHandle,
+    result::FutureResult,
+    scheduler::Scheduler,
 };

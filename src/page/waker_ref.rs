@@ -5,11 +5,18 @@
 // Imports
 //==============================================================================
 
-use super::{page::WakerPage, WakerPageRef, WAKER_PAGE_SIZE};
+use super::{
+    page::WakerPage,
+    WakerPageRef,
+    WAKER_PAGE_SIZE,
+};
 use ::std::{
     mem,
     ptr::NonNull,
-    task::{RawWaker, RawWakerVTable},
+    task::{
+        RawWaker,
+        RawWakerVTable,
+    },
 };
 
 //==============================================================================
@@ -137,12 +144,8 @@ unsafe fn waker_ref_drop(ptr: *const ()) {
 }
 
 /// Raw Waker Trait Implementation for Waker References
-pub const VTABLE: RawWakerVTable = RawWakerVTable::new(
-    waker_ref_clone,
-    waker_ref_wake,
-    waker_ref_wake_by_ref,
-    waker_ref_drop,
-);
+pub const VTABLE: RawWakerVTable =
+    RawWakerVTable::new(waker_ref_clone, waker_ref_wake, waker_ref_wake_by_ref, waker_ref_drop);
 
 //==============================================================================
 // Unit Tests
@@ -151,12 +154,18 @@ pub const VTABLE: RawWakerVTable = RawWakerVTable::new(
 #[cfg(test)]
 mod tests {
     use crate::{
-        page::{WakerPageRef, WakerRef},
+        page::{
+            WakerPageRef,
+            WakerRef,
+        },
         waker64::WAKER_BIT_LENGTH,
     };
     use ::rand::Rng;
     use ::std::ptr::NonNull;
-    use ::test::{black_box, Bencher};
+    use ::test::{
+        black_box,
+        Bencher,
+    };
 
     #[test]
     fn test_refcount() {

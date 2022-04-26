@@ -28,13 +28,16 @@
 //! This allows is to store immovable objects inside the slab, since growing the
 //! collection doesn't require the existing slots to move.
 
-use ::std::{mem, pin::Pin, ptr};
+use ::std::{
+    mem,
+    pin::Pin,
+    ptr,
+};
 
 // Size of the first slot.
 const FIRST_SLOT_SIZE: usize = 16;
 // The initial number of bits to ignore for the first slot.
-const FIRST_SLOT_MASK: usize =
-    std::mem::size_of::<usize>() * 8 - FIRST_SLOT_SIZE.leading_zeros() as usize - 1;
+const FIRST_SLOT_MASK: usize = std::mem::size_of::<usize>() * 8 - FIRST_SLOT_SIZE.leading_zeros() as usize - 1;
 
 /// Pre-allocated storage for a uniform data type, with slots of immovable
 /// memory regions.
@@ -302,8 +305,7 @@ impl<T> Drop for PinSlab<T> {
 fn calculate_key(key: usize) -> (usize, usize, usize) {
     assert!(key < (1usize << (mem::size_of::<usize>() * 8 - 1)));
 
-    let slot = ((mem::size_of::<usize>() * 8) as usize - key.leading_zeros() as usize)
-        .saturating_sub(FIRST_SLOT_MASK);
+    let slot = ((mem::size_of::<usize>() * 8) as usize - key.leading_zeros() as usize).saturating_sub(FIRST_SLOT_MASK);
 
     let (start, end) = if key < FIRST_SLOT_SIZE {
         (0, FIRST_SLOT_SIZE)
@@ -323,7 +325,12 @@ fn slot_sizes() -> impl Iterator<Item = usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::{calculate_key, slot_sizes, PinSlab, FIRST_SLOT_SIZE};
+    use super::{
+        calculate_key,
+        slot_sizes,
+        PinSlab,
+        FIRST_SLOT_SIZE,
+    };
 
     #[global_allocator]
     static ALLOCATOR: checkers::Allocator = checkers::Allocator::system();
