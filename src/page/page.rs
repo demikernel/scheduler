@@ -5,7 +5,10 @@
 // Imports
 //==============================================================================
 
-use crate::waker64::{Waker64, WAKER_BIT_LENGTH};
+use crate::waker64::{
+    Waker64,
+    WAKER_BIT_LENGTH,
+};
 
 //==============================================================================
 // Constants
@@ -168,10 +171,17 @@ impl Default for WakerPage {
 
 #[cfg(test)]
 mod tests {
-    use super::{WakerPage, WAKER_BIT_LENGTH, WAKER_PAGE_SIZE};
+    use super::{
+        WakerPage,
+        WAKER_BIT_LENGTH,
+        WAKER_PAGE_SIZE,
+    };
     use ::rand::Rng;
     use ::std::mem;
-    use ::test::{black_box, Bencher};
+    use ::test::{
+        black_box,
+        Bencher,
+    };
 
     #[test]
     fn test_sizes() {

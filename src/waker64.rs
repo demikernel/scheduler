@@ -5,7 +5,10 @@
 // Imports
 //==============================================================================
 
-use ::std::{cell::UnsafeCell, mem};
+use ::std::{
+    cell::UnsafeCell,
+    mem,
+};
 
 //==============================================================================
 // Constants
@@ -97,7 +100,10 @@ unsafe impl Sync for Waker64 {}
 mod tests {
     use super::Waker64;
     use ::rand::Rng;
-    use ::test::{black_box, Bencher};
+    use ::test::{
+        black_box,
+        Bencher,
+    };
 
     #[bench]
     fn bench_fetch_and(b: &mut Bencher) {

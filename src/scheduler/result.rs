@@ -8,7 +8,10 @@
 use ::std::{
     future::Future,
     pin::Pin,
-    task::{Context, Poll},
+    task::{
+        Context,
+        Poll,
+    },
 };
 
 //==============================================================================

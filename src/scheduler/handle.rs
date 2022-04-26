@@ -5,7 +5,10 @@
 // Imports
 //==============================================================================
 
-use crate::{page::WakerPageRef, waker64::WAKER_BIT_LENGTH};
+use crate::{
+    page::WakerPageRef,
+    waker64::WAKER_BIT_LENGTH,
+};
 
 //==============================================================================
 // Structures
