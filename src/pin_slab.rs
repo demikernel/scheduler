@@ -32,6 +32,7 @@ use ::std::{
     mem,
     pin::Pin,
     ptr,
+    ptr::NonNull,
 };
 
 // Size of the first slot.
@@ -100,7 +101,7 @@ impl<T> PinSlab<T> {
         // doesn't move. We only provide mutators to drop the storage through
         // `remove` (but it doesn't return it).
         unsafe {
-            let entry = self.internal_get_mut(key)?;
+            let entry: &mut T = self.internal_get_mut(key)?;
             Some(Pin::new_unchecked(entry))
         }
     }
@@ -127,14 +128,14 @@ impl<T> PinSlab<T> {
     #[inline(always)]
     unsafe fn internal_get_mut(&mut self, key: usize) -> Option<&mut T> {
         let (slot, offset, len): (usize, usize, usize) = calculate_key(key)?;
-        let slot = *self.slots.get_mut(slot)?;
+        let slot: NonNull<Entry<T>> = *self.slots.get_mut(slot)?;
 
         // Safety: all slots are fully allocated and initialized in `new_slot`.
         // As long as we have access to it, we know that we will only find
         // initialized entries assuming offset < len.
         debug_assert!(offset < len);
 
-        let entry = match &mut *slot.as_ptr().add(offset) {
+        let entry: &mut T = match &mut *slot.as_ptr().add(offset) {
             Entry::Occupied(entry) => entry,
             _ => return None,
         };
@@ -146,14 +147,14 @@ impl<T> PinSlab<T> {
     #[inline(always)]
     unsafe fn internal_get(&self, key: usize) -> Option<&T> {
         let (slot, offset, len): (usize, usize, usize) = calculate_key(key)?;
-        let slot = *self.slots.get(slot)?;
+        let slot: NonNull<Entry<T>> = *self.slots.get(slot)?;
 
         // Safety: all slots are fully allocated and initialized in `new_slot`.
         // As long as we have access to it, we know that we will only find
         // initialized entries assuming offset < len.
         debug_assert!(offset < len);
 
-        let entry = match &*slot.as_ptr().add(offset) {
+        let entry: &T = match &*slot.as_ptr().add(offset) {
             Entry::Occupied(entry) => entry,
             _ => return None,
         };
@@ -172,7 +173,7 @@ impl<T> PinSlab<T> {
     pub fn remove(&mut self, key: usize) -> Option<bool> {
         let (slot, offset, len): (usize, usize, usize) = calculate_key(key)?;
 
-        let slot = match self.slots.get_mut(slot) {
+        let slot: NonNull<Entry<T>> = match self.slots.get_mut(slot) {
             Some(slot) => *slot,
             None => return Some(false),
         };
@@ -182,7 +183,7 @@ impl<T> PinSlab<T> {
         // initialized entries assuming offset < len.
         debug_assert!(offset < len);
         unsafe {
-            let entry = slot.as_ptr().add(offset);
+            let entry: *mut Entry<T> = slot.as_ptr().add(offset);
 
             match &*entry {
                 Entry::Occupied(..) => (),
@@ -204,13 +205,13 @@ impl<T> PinSlab<T> {
         T: Unpin,
     {
         let (slot, offset, len): (usize, usize, usize) = calculate_key(key)?;
-        let slot = match self.slots.get_mut(slot) {
+        let slot: NonNull<Entry<T>> = match self.slots.get_mut(slot) {
             Some(slot) => *slot,
             None => return None,
         };
         debug_assert!(offset < len);
         unsafe {
-            let entry = slot.as_ptr().add(offset);
+            let entry: *mut Entry<T> = slot.as_ptr().add(offset);
 
             match &*entry {
                 Entry::Occupied(..) => (),
@@ -246,7 +247,7 @@ impl<T> PinSlab<T> {
             d.push(Entry::None);
         }
 
-        let ptr = d.as_mut_ptr();
+        let ptr: *mut Entry<T> = d.as_mut_ptr();
         mem::forget(d);
 
         // Safety: We just initialized the pointer to be non-null above.
@@ -264,7 +265,7 @@ impl<T> PinSlab<T> {
             // We also know it's safe to have unique access to _any_ slots,
             // since we have unique access to the slab in this function.
             debug_assert!(offset < len);
-            let entry = unsafe { &mut *slot.as_ptr().add(offset) };
+            let entry: &mut Entry<T> = unsafe { &mut *slot.as_ptr().add(offset) };
 
             self.next = match *entry {
                 Entry::None => key + 1,
@@ -278,7 +279,7 @@ impl<T> PinSlab<T> {
             *entry = Entry::Occupied(val);
         } else {
             unsafe {
-                let slot = self.new_slot(len);
+                let slot: NonNull<Entry<T>> = self.new_slot(len);
                 *slot.as_ptr() = Entry::Occupied(val);
                 self.slots.push(slot);
                 self.next = key + 1;
@@ -310,9 +311,10 @@ fn calculate_key(key: usize) -> Option<(usize, usize, usize)> {
         return None;
     }
 
-    let slot = ((mem::size_of::<usize>() * 8) as usize - key.leading_zeros() as usize).saturating_sub(FIRST_SLOT_MASK);
+    let slot: usize =
+        ((mem::size_of::<usize>() * 8) as usize - key.leading_zeros() as usize).saturating_sub(FIRST_SLOT_MASK);
 
-    let (start, end) = if key < FIRST_SLOT_SIZE {
+    let (start, end): (usize, usize) = if key < FIRST_SLOT_SIZE {
         (0, FIRST_SLOT_SIZE)
     } else {
         (FIRST_SLOT_SIZE << (slot - 1), FIRST_SLOT_SIZE << slot)
