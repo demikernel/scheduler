@@ -258,7 +258,7 @@ mod tests {
 
         b.iter(|| {
             let future: DummyFuture = black_box(DummyFuture::default());
-            let handle: SchedulerHandle = scheduler.insert(future);
+            let handle: SchedulerHandle = scheduler.insert(future).expect("couldn't insert future in scheduler");
             black_box(handle);
         });
     }
@@ -270,7 +270,10 @@ mod tests {
         // Insert a single future in the scheduler. This future shall complete
         // with a single pool operation.
         let future: DummyFuture = DummyFuture::new(0);
-        let handle: SchedulerHandle = scheduler.insert(future);
+        let handle: SchedulerHandle = match scheduler.insert(future) {
+            Some(handle) => handle,
+            None => panic!("insert() failed"),
+        };
 
         // All futures are inserted in the scheduler with notification flag set.
         // By polling once, our future should complete.
@@ -286,7 +289,10 @@ mod tests {
         // Insert a single future in the scheduler. This future shall complete
         // with two poll operations.
         let future: DummyFuture = DummyFuture::new(1);
-        let handle: SchedulerHandle = scheduler.insert(future);
+        let handle: SchedulerHandle = match scheduler.insert(future) {
+            Some(handle) => handle,
+            None => panic!("insert() failed"),
+        };
 
         // All futures are inserted in the scheduler with notification flag set.
         // By polling once, this future should make a transition.
@@ -309,7 +315,10 @@ mod tests {
         // Half of them will be ready.
         for val in 0..1024 {
             let future: DummyFuture = DummyFuture::new(val);
-            let handle: SchedulerHandle = scheduler.insert(future);
+            let handle: SchedulerHandle = match scheduler.insert(future) {
+                Some(handle) => handle,
+                None => panic!("insert() failed"),
+            };
             handles.push(handle);
         }
 
