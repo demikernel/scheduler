@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// MIT License
+
 // Copyright (c) 2019 John-John Tedro
 //
 // MIT License
