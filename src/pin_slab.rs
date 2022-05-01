@@ -93,18 +93,6 @@ impl<T> PinSlab<T> {
         }
     }
 
-    /// Get the length of the slab.
-    #[allow(dead_code)]
-    pub fn len(&self) -> usize {
-        self.len
-    }
-
-    /// Test if the pin slab is empty.
-    #[allow(dead_code)]
-    pub fn is_empty(&self) -> bool {
-        self.len == 0
-    }
-
     /// Insert a value into the pin slab.
     pub fn insert(&mut self, val: T) -> Option<usize> {
         let key: usize = self.next;
@@ -128,17 +116,6 @@ impl<T> PinSlab<T> {
         // Safety: We only use this to acquire an immutable reference.
         // The internal calculation guarantees that the key is in bounds.
         unsafe { self.internal_get(key) }
-    }
-
-    /// Get a mutable reference to the value at the given slot.
-    #[allow(dead_code)]
-    pub fn get_mut(&mut self, key: usize) -> Option<&mut T>
-    where
-        T: Unpin,
-    {
-        // Safety: simply exposing the internal function in case `T: Unpin` is
-        // safe.
-        unsafe { self.internal_get_mut(key) }
     }
 
     /// Get a mutable reference to the value at the given slot.
