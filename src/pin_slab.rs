@@ -28,6 +28,10 @@
 //! This allows is to store immovable objects inside the slab, since growing the
 //! collection doesn't require the existing slots to move.
 
+//======================================================================================================================
+// Imports
+//======================================================================================================================
+
 use ::std::{
     mem,
     pin::Pin,
@@ -35,10 +39,18 @@ use ::std::{
     ptr::NonNull,
 };
 
+//======================================================================================================================
+// Constants
+//======================================================================================================================
+
 // Size of the first slot.
 const FIRST_SLOT_SIZE: usize = 16;
 // The initial number of bits to ignore for the first slot.
 const FIRST_SLOT_MASK: usize = std::mem::size_of::<usize>() * 8 - FIRST_SLOT_SIZE.leading_zeros() as usize - 1;
+
+//======================================================================================================================
+// Structures
+//======================================================================================================================
 
 /// Pre-allocated storage for a uniform data type, with slots of immovable
 /// memory regions.
@@ -53,8 +65,9 @@ pub struct PinSlab<T> {
     next: usize,
 }
 
-unsafe impl<T> Send for PinSlab<T> {}
-unsafe impl<T> Sync for PinSlab<T> {}
+//======================================================================================================================
+// Enumerations
+//======================================================================================================================
 
 enum Entry<T> {
     // Each slot is pre-allocated with entries of `None`.
@@ -65,6 +78,10 @@ enum Entry<T> {
     // An entry that is occupied with a value.
     Occupied(T),
 }
+
+//======================================================================================================================
+// Associated Implementations
+//======================================================================================================================
 
 impl<T> PinSlab<T> {
     /// Construct a new, empty [PinSlab] with the default slot size.
@@ -292,6 +309,13 @@ impl<T> PinSlab<T> {
     }
 }
 
+//======================================================================================================================
+// Trait Implementations
+//======================================================================================================================
+
+unsafe impl<T> Send for PinSlab<T> {}
+unsafe impl<T> Sync for PinSlab<T> {}
+
 impl<T> Default for PinSlab<T> {
     fn default() -> Self {
         Self::new()
@@ -303,6 +327,10 @@ impl<T> Drop for PinSlab<T> {
         self.clear();
     }
 }
+
+//======================================================================================================================
+// Standalone Functions
+//======================================================================================================================
 
 /// Calculate the key as a (slot, offset, len) tuple.
 fn calculate_key(key: usize) -> Option<(usize, usize, usize)> {
@@ -329,6 +357,10 @@ fn slot_sizes() -> impl Iterator<Item = usize> {
         n => FIRST_SLOT_SIZE << (n - 1),
     })
 }
+
+//======================================================================================================================
+// Unit Tests
+//======================================================================================================================
 
 #[cfg(test)]
 mod tests {
