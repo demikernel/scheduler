@@ -1,9 +1,13 @@
 [package]
 name = "catwalk"
 version = "0.1.0"
+authors = [ "Microsoft Corporation" ]
+description = "Demikernel's Scheduler"
+homepage = "https://aka.ms/demikernel"
+repository = "https://github.com/demikernel/cawalk"
+readme = "README.md"
+license-file = "LICENSE"
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 bit-iter = "1.1.0"
