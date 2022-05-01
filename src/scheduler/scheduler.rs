@@ -74,8 +74,8 @@ impl<F: Future<Output = ()> + Unpin> Inner<F> {
     }
 
     /// Insert a task into our scheduler returning a key that may be used to drive its status.
-    fn insert(&mut self, future: F) -> u64 {
-        let key: usize = self.slab.insert(future);
+    fn insert(&mut self, future: F) -> Option<u64> {
+        let key: usize = self.slab.insert(future)?;
 
         // Add a new page to hold this future's status if the current page is filled.
         while key >= self.pages.len() << WAKER_BIT_LENGTH_SHIFT {
@@ -83,7 +83,7 @@ impl<F: Future<Output = ()> + Unpin> Inner<F> {
         }
         let (page, subpage_ix): (&WakerPageRef, usize) = self.get_page(key as u64);
         page.initialize(subpage_ix);
-        key as u64
+        Some(key as u64)
     }
 }
 
@@ -109,11 +109,11 @@ impl Scheduler {
     }
 
     /// Insert a new task into our scheduler returning a handle corresponding to it.
-    pub fn insert<F: SchedulerFuture>(&self, future: F) -> SchedulerHandle {
+    pub fn insert<F: SchedulerFuture>(&self, future: F) -> Option<SchedulerHandle> {
         let mut inner: RefMut<Inner<Box<dyn SchedulerFuture>>> = self.inner.borrow_mut();
-        let key: u64 = inner.insert(Box::new(future));
+        let key: u64 = inner.insert(Box::new(future))?;
         let (page, _): (&WakerPageRef, usize) = inner.get_page(key);
-        SchedulerHandle::new(key, page.clone())
+        Some(SchedulerHandle::new(key, page.clone()))
     }
 
     /// Poll all futures which are ready to run again. Tasks in our scheduler are notified when

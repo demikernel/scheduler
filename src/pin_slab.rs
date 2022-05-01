@@ -88,10 +88,10 @@ impl<T> PinSlab<T> {
     }
 
     /// Insert a value into the pin slab.
-    pub fn insert(&mut self, val: T) -> usize {
-        let key = self.next;
-        self.insert_at(key, val);
-        key
+    pub fn insert(&mut self, val: T) -> Option<usize> {
+        let key: usize = self.next;
+        self.insert_at(key, val)?;
+        Some(key)
     }
 
     /// Access the given key as a pinned mutable value.
@@ -126,7 +126,7 @@ impl<T> PinSlab<T> {
     /// Get a mutable reference to the value at the given slot.
     #[inline(always)]
     unsafe fn internal_get_mut(&mut self, key: usize) -> Option<&mut T> {
-        let (slot, offset, len) = calculate_key(key);
+        let (slot, offset, len): (usize, usize, usize) = calculate_key(key)?;
         let slot = *self.slots.get_mut(slot)?;
 
         // Safety: all slots are fully allocated and initialized in `new_slot`.
@@ -145,7 +145,7 @@ impl<T> PinSlab<T> {
     /// Get a reference to the value at the given slot.
     #[inline(always)]
     unsafe fn internal_get(&self, key: usize) -> Option<&T> {
-        let (slot, offset, len) = calculate_key(key);
+        let (slot, offset, len): (usize, usize, usize) = calculate_key(key)?;
         let slot = *self.slots.get(slot)?;
 
         // Safety: all slots are fully allocated and initialized in `new_slot`.
@@ -163,18 +163,18 @@ impl<T> PinSlab<T> {
 
     /// Remove the key from the slab.
     ///
-    /// Returns `true` if the entry was removed, `false` otherwise.
+    /// If successful, returns `Some(true)` if the entry was removed, `Some(false)` otherwise.
     /// Removing a key which does not exist has no effect, and `false` will be
-    /// returned.
+    /// returned. On failure, it returns `None`.
     ///
     /// We need to take care that we don't move it, hence we only perform
     /// operations over pointers below.
-    pub fn remove(&mut self, key: usize) -> bool {
-        let (slot, offset, len) = calculate_key(key);
+    pub fn remove(&mut self, key: usize) -> Option<bool> {
+        let (slot, offset, len): (usize, usize, usize) = calculate_key(key)?;
 
         let slot = match self.slots.get_mut(slot) {
             Some(slot) => *slot,
-            None => return false,
+            None => return Some(false),
         };
 
         // Safety: all slots are fully allocated and initialized in `new_slot`.
@@ -186,7 +186,7 @@ impl<T> PinSlab<T> {
 
             match &*entry {
                 Entry::Occupied(..) => (),
-                _ => return false,
+                _ => return Some(false),
             }
 
             ptr::drop_in_place(entry);
@@ -195,7 +195,7 @@ impl<T> PinSlab<T> {
             self.next = key;
         }
 
-        true
+        Some(true)
     }
 
     /// Method to take out an `Unpin` value
@@ -203,7 +203,7 @@ impl<T> PinSlab<T> {
     where
         T: Unpin,
     {
-        let (slot, offset, len) = calculate_key(key);
+        let (slot, offset, len): (usize, usize, usize) = calculate_key(key)?;
         let slot = match self.slots.get_mut(slot) {
             Some(slot) => *slot,
             None => return None,
@@ -254,8 +254,8 @@ impl<T> PinSlab<T> {
     }
 
     /// Insert a value at the given slot.
-    fn insert_at(&mut self, key: usize, val: T) {
-        let (slot, offset, len) = calculate_key(key);
+    fn insert_at(&mut self, key: usize, val: T) -> Option<()> {
+        let (slot, offset, len): (usize, usize, usize) = calculate_key(key)?;
 
         if let Some(slot) = self.slots.get_mut(slot) {
             // Safety: all slots are fully allocated and initialized in
@@ -286,6 +286,8 @@ impl<T> PinSlab<T> {
         }
 
         self.len += 1;
+
+        Some(())
     }
 }
 
@@ -302,8 +304,11 @@ impl<T> Drop for PinSlab<T> {
 }
 
 /// Calculate the key as a (slot, offset, len) tuple.
-fn calculate_key(key: usize) -> (usize, usize, usize) {
-    assert!(key < (1usize << (mem::size_of::<usize>() * 8 - 1)));
+fn calculate_key(key: usize) -> Option<(usize, usize, usize)> {
+    // Check arguments.
+    if key >= (1usize << (mem::size_of::<usize>() * 8 - 1)) {
+        return None;
+    }
 
     let slot = ((mem::size_of::<usize>() * 8) as usize - key.leading_zeros() as usize).saturating_sub(FIRST_SLOT_MASK);
 
@@ -313,7 +318,7 @@ fn calculate_key(key: usize) -> (usize, usize, usize) {
         (FIRST_SLOT_SIZE << (slot - 1), FIRST_SLOT_SIZE << slot)
     };
 
-    (slot, key - start, end - start)
+    Some((slot, key - start, end - start))
 }
 
 fn slot_sizes() -> impl Iterator<Item = usize> {
