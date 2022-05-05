@@ -1,5 +1,5 @@
 [package]
-name = "catwalk"
+name = "scheduler"
 version = "0.1.0"
 authors = [ "Microsoft Corporation" ]
 description = "Demikernel's Scheduler"

@@ -1,9 +1,9 @@
-Catwalk
-==========
+Demikernel's Scheduler
+=======================
 
 [![Join us on Slack!](https://img.shields.io/badge/chat-on%20Slack-e01563.svg)](https://join.slack.com/t/demikernel/shared_invite/zt-11i6lgaw5-HFE_IAls7gUX3kp1XSab0g)
-[![Build](https://github.com/demikernel/catwalk/actions/workflows/build.yml/badge.svg)](https://github.com/demikernel/catwalk/actions/workflows/build.yml)
-[![Test](https://github.com/demikernel/catwalk/actions/workflows/test.yml/badge.svg)](https://github.com/demikernel/catwalk/actions/workflows/test.yml)
+[![Build](https://github.com/demikernel/scheduler/actions/workflows/build.yml/badge.svg)](https://github.com/demikernel/scheduler/actions/workflows/build.yml)
+[![Test](https://github.com/demikernel/scheduler/actions/workflows/test.yml/badge.svg)](https://github.com/demikernel/scheduler/actions/workflows/test.yml)
 
 _Catwalk_ is a fast engine for scheduling futures.
 
@@ -19,8 +19,8 @@ Building and Running
 ```
 export WORKDIR=$HOME                                   # Change this to whatever you want.
 cd $WORKDIR                                            # Switch to working directory.
-git clone https://github.com/demikernel/catwalk.git    # Clone.
-cd $WORKDIR/catwalk                                    # Switch to repository's source tree.
+git clone https://github.com/demikernel/scheduler.git    # Clone.
+cd $WORKDIR/scheduler                                    # Switch to repository's source tree.
 ```
 
 **1. Install Prerequisites (Only Once)**
