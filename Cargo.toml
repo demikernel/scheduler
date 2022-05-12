@@ -1,6 +1,6 @@
 [package]
 name = "scheduler"
-version = "1.0.0"
+version = "1.0.1"
 authors = [ "Microsoft Corporation" ]
 description = "Demikernel's Scheduler"
 homepage = "https://aka.ms/demikernel"
