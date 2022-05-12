@@ -1,18 +1,18 @@
 [package]
 name = "scheduler"
-version = "1.0.0"
+version = "1.0.1"
 authors = [ "Microsoft Corporation" ]
 description = "Demikernel's Scheduler"
 homepage = "https://aka.ms/demikernel"
-repository = "https://github.com/demikernel/cawalk"
+repository = "https://github.com/demikernel/scheduler"
 readme = "README.md"
 license-file = "LICENSE"
 edition = "2018"
 
 [dependencies]
 bit-iter = "1.1.0"
-checkers = "0.6.0"
-rand = "0.8.4"
+checkers = "0.6.1"
+rand = "0.8.5"
 
 [profile.release]
 lto = "fat"
