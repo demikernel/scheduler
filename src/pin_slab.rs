@@ -349,9 +349,6 @@ mod tests {
         pin::Pin,
     };
 
-    #[global_allocator]
-    static ALLOCATOR: checkers::Allocator = checkers::Allocator::system();
-
     #[test]
     fn slot_sizes() {
         assert_eq!(

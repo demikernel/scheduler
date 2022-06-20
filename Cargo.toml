@@ -11,7 +11,6 @@ edition = "2021"
 
 [dependencies]
 bit-iter = "1.1.1"
-checkers = "0.6.1"
 rand = "0.8.5"
 
 [profile.release]
