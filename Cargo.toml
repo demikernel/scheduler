@@ -7,7 +7,7 @@ homepage = "https://aka.ms/demikernel"
 repository = "https://github.com/demikernel/scheduler"
 readme = "README.md"
 license-file = "LICENSE"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 bit-iter = "1.1.1"
