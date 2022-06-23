@@ -68,6 +68,9 @@ impl Waker64 {
     pub fn fetch_sub(&self, val: u64) -> u64 {
         let s = unsafe { &mut *self.0.get() };
         let old = *s;
+        if val > *s {
+            panic!("fetch_sub() would overflow");
+        }
         *s -= val;
         old
     }
@@ -141,7 +144,7 @@ mod tests {
     #[bench]
     fn bench_fetch_sub(b: &mut Bencher) {
         let x: u64 = rand::thread_rng().gen_range(0..64);
-        let w64: Waker64 = Waker64::new(0);
+        let w64: Waker64 = Waker64::new(64);
 
         b.iter(|| {
             let val: u64 = black_box(x);

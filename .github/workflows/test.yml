@@ -28,7 +28,7 @@ jobs:
     name: Compile Debug
     runs-on: ubuntu-latest
     steps:
-    - name: Fetch Changes
+    - name: Build Debug
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.host }}
@@ -50,7 +50,7 @@ jobs:
     needs: [build-debug]
     runs-on: ubuntu-latest
     steps:
-    - name: Fetch Changes
+    - name: Test Debug
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.host }}
@@ -72,7 +72,7 @@ jobs:
     needs: [test-debug]
     runs-on: ubuntu-latest
     steps:
-    - name: Fetch Changes
+    - name: Build Release
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.host }}
@@ -94,7 +94,7 @@ jobs:
     needs: [build-release]
     runs-on: ubuntu-latest
     steps:
-    - name: Fetch Changes
+    - name: Test Release
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.host }}
