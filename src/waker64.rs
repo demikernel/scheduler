@@ -144,7 +144,7 @@ mod tests {
     #[bench]
     fn bench_fetch_sub(b: &mut Bencher) {
         let x: u64 = rand::thread_rng().gen_range(0..64);
-        let w64: Waker64 = Waker64::new(0);
+        let w64: Waker64 = Waker64::new(64);
 
         b.iter(|| {
             let val: u64 = black_box(x);
