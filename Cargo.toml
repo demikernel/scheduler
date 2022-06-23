@@ -11,6 +11,8 @@ license-file = "LICENSE.txt"
 
 [dependencies]
 bit-iter = "1.1.1"
+
+[dev-dependencies]
 rand = "0.8.5"
 
 # Build profile used for releases.
