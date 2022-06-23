@@ -68,6 +68,9 @@ impl Waker64 {
     pub fn fetch_sub(&self, val: u64) -> u64 {
         let s = unsafe { &mut *self.0.get() };
         let old = *s;
+        if val > *s {
+            panic!("fetch_sub() would overflow");
+        }
         *s -= val;
         old
     }
