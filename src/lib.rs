@@ -6,6 +6,7 @@
 #![feature(test)]
 #![feature(allocator_api)]
 
+mod demi_bit_iter;
 mod page;
 mod pin_slab;
 mod scheduler;
